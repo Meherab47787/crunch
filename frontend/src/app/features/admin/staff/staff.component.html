@@ -1,0 +1,55 @@
+<app-admin-page-header title="Staff" subtitle="Administrators and kitchen staff accounts">
+  <button type="button" class="btn-primary btn-sm" (click)="creating.set(true)"><lucide-icon name="plus" [size]="14" /> Add staff</button>
+</app-admin-page-header>
+
+<div class="mb-4 max-w-md">
+  <label class="sr-only" for="st-q">Filter staff</label>
+  <div class="relative">
+    <span class="inline-flex pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" aria-hidden="true"><lucide-icon name="search" [size]="16" /></span>
+    <input id="st-q" type="search" class="input !pl-9" placeholder="Filter by name or email" [value]="filter()" (input)="filter.set($any($event.target).value)" />
+  </div>
+</div>
+
+<section class="admin-card overflow-hidden" aria-label="Staff">
+  @if (staff.error() && !staff.data()) {
+    <div class="p-4"><app-error-state [message]="staff.error()!" (retry)="staff.reload()" /></div>
+  } @else if (!staff.data()) {
+    <app-table-skeleton [rows]="4" [cols]="4" />
+  } @else if (visible().length === 0) {
+    <app-empty-state icon="users" title="No staff found" />
+  } @else {
+    <div class="overflow-x-auto">
+      <table class="table-base">
+        <thead><tr><th scope="col">Name</th><th scope="col">Role</th><th scope="col" class="text-center">Enabled</th><th scope="col" class="hidden sm:table-cell">Added</th></tr></thead>
+        <tbody>
+          @for (u of visible(); track u.id) {
+            <tr>
+              <td>
+                <p class="font-semibold text-charcoal-900">{{ u.fullName }} @if (u.id === me()?.id) { <span class="chip ml-1 bg-charcoal-800/5 text-charcoal-500">You</span> }</p>
+                <p class="text-xs text-charcoal-500">{{ u.email }}@if (u.phone) { · {{ u.phone }} }</p>
+              </td>
+              <td>
+                <label class="sr-only" [for]="'role-' + u.id">Role for {{ u.fullName }}</label>
+                <select [id]="'role-' + u.id" class="input !w-auto !py-1.5" [value]="u.role" [disabled]="busy().has(u.id)"
+                        (change)="changeRole(u, $any($event.target).value, $event)">
+                  <option value="ADMIN">Administrator</option>
+                  <option value="KITCHEN_STAFF">Kitchen staff</option>
+                  <option value="CUSTOMER">Customer (remove staff access)</option>
+                </select>
+              </td>
+              <td class="text-center">
+                <app-toggle-switch [checked]="u.enabled" [label]="(u.enabled ? 'Disable ' : 'Enable ') + u.fullName" [disabled]="busy().has(u.id)"
+                                   (toggled)="setEnabled(u, $event)" />
+              </td>
+              <td class="hidden whitespace-nowrap text-charcoal-500 sm:table-cell">{{ u.createdAt | date: 'MMM d, y' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
+
+@if (creating()) {
+  <app-staff-create-modal (closed)="creating.set(false)" (saved)="creating.set(false); staff.reload()" />
+}

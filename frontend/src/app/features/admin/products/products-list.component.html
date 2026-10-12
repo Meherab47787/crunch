@@ -1,0 +1,94 @@
+<app-admin-page-header title="Products" subtitle="Menu items, prices, availability and visibility">
+  <a routerLink="/admin/products/new" class="btn-primary btn-sm"><lucide-icon name="plus" [size]="14" /> New product</a>
+</app-admin-page-header>
+
+<div class="admin-card mb-4 grid gap-3 p-4 sm:grid-cols-[2fr_1fr_1fr]" role="search">
+  <div>
+    <label class="label" for="p-q">Search</label>
+    <div class="relative">
+      <span class="inline-flex pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" aria-hidden="true"><lucide-icon name="search" [size]="16" /></span>
+      <input id="p-q" type="search" class="input !pl-9" placeholder="Name or description" [value]="search()" (input)="onSearch($any($event.target).value)" />
+    </div>
+  </div>
+  <div>
+    <label class="label" for="p-cat">Category</label>
+    <select id="p-cat" class="input" [value]="category()" (change)="category.set($any($event.target).value); page.set(0)">
+      <option value="">All categories</option>
+      @for (c of categories.data() ?? []; track c.id) { <option [value]="c.slug" [selected]="c.slug === category()">{{ c.name }}</option> }
+    </select>
+  </div>
+  <div>
+    <label class="label" for="p-type">Type</label>
+    <select id="p-type" class="input" [value]="type()" (change)="type.set($any($event.target).value); page.set(0)">
+      <option value="">All types</option><option value="STANDARD">Standard</option><option value="COMBO">Combo</option>
+    </select>
+  </div>
+</div>
+
+<section class="admin-card overflow-hidden" aria-label="Products">
+  @if (products.error()) {
+    <div class="p-4"><app-error-state [message]="products.error()!" (retry)="products.reload()" /></div>
+  } @else if (!products.data()) {
+    <app-table-skeleton [rows]="8" [cols]="6" />
+  } @else if (products.data()!.content.length === 0) {
+    <app-empty-state icon="pizza" title="No products found" text="Adjust the filters or add a new product.">
+      <a routerLink="/admin/products/new" class="btn-primary btn-sm">New product</a>
+    </app-empty-state>
+  } @else {
+    <div class="overflow-x-auto transition-opacity" [class.opacity-50]="products.loading()">
+      <table class="table-base">
+        <thead>
+          <tr>
+            <th scope="col">Product</th><th scope="col" class="hidden md:table-cell">Category</th><th scope="col" class="hidden sm:table-cell">Type</th>
+            <th scope="col" class="text-right">Price</th><th scope="col" class="text-center">In stock</th><th scope="col" class="text-center">Visible</th>
+            <th scope="col"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of products.data()!.content; track p.id) {
+            <tr class="hover:bg-charcoal-800/[0.02]">
+              <td>
+                <div class="flex min-w-[12rem] items-center gap-3">
+                  @if (p.imageUrl) {
+                    <img [src]="p.imageUrl" alt="" class="h-11 w-11 shrink-0 rounded-xl object-cover" loading="lazy" />
+                  } @else {
+                    <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-charcoal-800/5 text-charcoal-300"><lucide-icon name="image" [size]="18" /></span>
+                  }
+                  <div class="min-w-0">
+                    <a [routerLink]="['/admin/products', p.id]" class="font-semibold text-charcoal-900 hover:text-tomato-600 hover:underline">{{ p.name }}</a>
+                    <div class="mt-0.5 flex flex-wrap gap-1">
+                      @if (p.featured) { <span class="chip bg-ember-100 text-ember-700">Featured</span> }
+                      @if (p.bestseller) { <span class="chip bg-tomato-50 text-tomato-700">Bestseller</span> }
+                      @if (p.newArrival) { <span class="chip bg-sky-100 text-sky-800">New</span> }
+                      @if (p.promotionName) { <span class="chip bg-basil-500/10 text-basil-600">{{ p.promotionName }}</span> }
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td class="hidden whitespace-nowrap text-charcoal-600 md:table-cell">{{ p.categoryName }}</td>
+              <td class="hidden sm:table-cell"><span class="chip" [class]="p.productType === 'COMBO' ? 'chip bg-violet-100 text-violet-800' : 'chip bg-charcoal-800/5 text-charcoal-600'">{{ p.productType === 'COMBO' ? 'Combo' : 'Standard' }}</span></td>
+              <td class="whitespace-nowrap text-right tabular-nums">
+                {{ p.basePrice | money }}
+                @if (p.salePrice != null && p.salePrice < p.basePrice) { <span class="block text-xs text-basil-600">sale {{ p.salePrice | money }}</span> }
+              </td>
+              <td class="text-center">
+                <app-toggle-switch [checked]="p.available" [label]="(p.available ? 'Mark sold out: ' : 'Mark in stock: ') + p.name"
+                                   [disabled]="pending().has(p.id)" (toggled)="toggle(p, { available: $event })" />
+              </td>
+              <td class="text-center">
+                <app-toggle-switch [checked]="p.visible" [label]="(p.visible ? 'Hide from menu: ' : 'Show on menu: ') + p.name"
+                                   [disabled]="pending().has(p.id)" (toggled)="toggle(p, { visible: $event })" />
+              </td>
+              <td class="whitespace-nowrap text-right">
+                <a [routerLink]="['/admin/products', p.id]" class="btn-ghost btn-sm !px-2" [attr.aria-label]="'Edit ' + p.name"><lucide-icon name="pencil" [size]="15" /></a>
+                <button type="button" class="btn-ghost btn-sm !px-2 text-tomato-600" [attr.aria-label]="'Delete ' + p.name" (click)="remove(p)"><lucide-icon name="trash-2" [size]="15" /></button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination [page]="products.data()!.page" [size]="products.data()!.size" [total]="products.data()!.totalElements"
+                    [totalPages]="products.data()!.totalPages" (pageChange)="page.set($event)" />
+  }
+</section>

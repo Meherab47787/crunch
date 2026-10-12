@@ -1,0 +1,7 @@
+<button type="button" role="switch" [attr.aria-checked]="checked()" [attr.aria-label]="label()" [disabled]="disabled()"
+        (click)="toggled.emit(!checked())"
+        class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:cursor-wait disabled:opacity-60"
+        [class.bg-basil-500]="checked()" [class.bg-charcoal-300]="!checked()">
+  <span class="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform"
+        [style.transform]="checked() ? 'translateX(22px)' : 'translateX(2px)'"></span>
+</button>

@@ -1,0 +1,80 @@
+<app-admin-page-header title="Promotions & coupons" subtitle="Automatic menu discounts and checkout codes">
+  @if (tab() === 'promotions') {
+    <button type="button" class="btn-primary btn-sm" (click)="promoEdit.set({ p: null })"><lucide-icon name="plus" [size]="14" /> New promotion</button>
+  } @else {
+    <button type="button" class="btn-primary btn-sm" (click)="couponEdit.set({ c: null })"><lucide-icon name="plus" [size]="14" /> New coupon</button>
+  }
+</app-admin-page-header>
+
+<div role="tablist" aria-label="Promotions and coupons" class="mb-4 inline-flex rounded-full bg-charcoal-800/5 p-1" (keydown)="onTabKey($event)">
+  @for (t of tabs; track t.key) {
+    <button type="button" role="tab" [id]="'tab-' + t.key" [attr.aria-selected]="tab() === t.key" [attr.aria-controls]="'panel-' + t.key"
+            [tabindex]="tab() === t.key ? 0 : -1"
+            class="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition"
+            [class.bg-white]="tab() === t.key" [class.shadow-sm]="tab() === t.key" [class.text-charcoal-500]="tab() !== t.key"
+            (click)="setTab(t.key)">
+      <lucide-icon [name]="t.icon" [size]="15" /> {{ t.label }}
+      <span class="rounded-full bg-charcoal-800/10 px-1.5 text-[11px]">{{ t.key === 'promotions' ? (promotions.data()?.length ?? '–') : (coupons.data()?.length ?? '–') }}</span>
+    </button>
+  }
+</div>
+
+@if (tab() === 'promotions') {
+  <section id="panel-promotions" role="tabpanel" aria-labelledby="tab-promotions">
+    @if (promotions.error() && !promotions.data()) {
+      <app-error-state [message]="promotions.error()!" (retry)="promotions.reload()" />
+    } @else if (!promotions.data()) {
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">@for (i of [0, 1, 2]; track i) { <div class="skeleton h-56 rounded-2xl"></div> }</div>
+    } @else if (promotions.data()!.length === 0) {
+      <div class="admin-card"><app-empty-state icon="percent" title="No promotions" text="Promotions discount a category or product automatically on the menu." /></div>
+    } @else {
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        @for (p of promotions.data(); track p.id) {
+          <article class="admin-card flex flex-col overflow-hidden">
+            <div class="relative h-28 bg-charcoal-800/5">
+              @if (p.imageUrl) { <img [src]="p.imageUrl" alt="" class="h-full w-full object-cover" loading="lazy" /> }
+              <span class="absolute left-3 top-3 rounded-full bg-white px-2.5 py-1 font-display text-sm font-extrabold text-tomato-600 shadow">
+                {{ p.discountType === 'PERCENT' ? p.discountValue + '%' : (p.discountValue | money) }} off
+              </span>
+              @if (p.live) {
+                <span class="chip absolute right-3 top-3 bg-basil-500 text-white"><span class="h-1.5 w-1.5 animate-pulse rounded-full bg-white"></span> Live</span>
+              } @else {
+                <span class="chip absolute right-3 top-3 bg-white text-charcoal-500">{{ p.active ? 'Not live' : 'Inactive' }}</span>
+              }
+            </div>
+            <div class="flex flex-1 flex-col p-4">
+              <h2 class="text-base font-bold">{{ p.name }}</h2>
+              @if (p.description) { <p class="mt-1 line-clamp-2 text-sm text-charcoal-500">{{ p.description }}</p> }
+              <p class="mt-2 text-sm"><span class="mr-1 text-charcoal-500">Applies to</span><b class="mr-1">{{ p.productName ?? p.categoryName ?? '—' }}</b><span class="text-xs text-charcoal-400">({{ p.productName ? 'product' : 'category' }})</span></p>
+              <p class="mt-1 text-xs text-charcoal-500">{{ p.startsAt ? (p.startsAt | date: 'MMM d, y, h:mm a') : 'Any time' }} → {{ p.endsAt ? (p.endsAt | date: 'MMM d, y, h:mm a') : 'no end' }}</p>
+              <div class="mt-auto flex justify-end gap-1 pt-3">
+                <button type="button" class="btn-ghost btn-sm" (click)="promoEdit.set({ p })"><lucide-icon name="pencil" [size]="14" /> Edit</button>
+                <button type="button" class="btn-ghost btn-sm text-tomato-600" (click)="removePromotion(p)"><lucide-icon name="trash-2" [size]="14" /> Delete</button>
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+} @else {
+  <section id="panel-coupons" role="tabpanel" aria-labelledby="tab-coupons" class="admin-card overflow-hidden">
+    @if (coupons.error() && !coupons.data()) {
+      <div class="p-4"><app-error-state [message]="coupons.error()!" (retry)="coupons.reload()" /></div>
+    } @else if (!coupons.data()) {
+      <app-table-skeleton [rows]="5" [cols]="6" />
+    } @else if (coupons.data()!.length === 0) {
+      <app-empty-state icon="ticket" title="No coupons" text="Create a code customers can enter at checkout." />
+    } @else {
+      <app-coupons-table [coupons]="coupons.data()!" (edit)="couponEdit.set({ c: $event })" (remove)="removeCoupon($event)" />
+    }
+  </section>
+}
+
+@if (couponEdit(); as e) {
+  <app-coupon-form-modal [coupon]="e.c" [categories]="categories.data() ?? []" (closed)="couponEdit.set(null)" (saved)="couponEdit.set(null); coupons.reload()" />
+}
+@if (promoEdit(); as e) {
+  <app-promotion-form-modal [promotion]="e.p" [categories]="categories.data() ?? []" [products]="products.data()?.content ?? []"
+                            (closed)="promoEdit.set(null)" (saved)="promoEdit.set(null); promotions.reload()" />
+}

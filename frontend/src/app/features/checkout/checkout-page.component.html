@@ -1,0 +1,174 @@
+<div class="container-page py-10">
+  <a routerLink="/cart" class="inline-flex items-center gap-1.5 text-sm font-bold text-charcoal-500 hover:text-charcoal-900">
+    <lucide-icon name="arrow-left" [size]="15" /> Back to bag
+  </a>
+  <h1 class="mt-2 text-4xl font-extrabold">Checkout</h1>
+
+  @if (cart.isEmpty()) {
+    <app-empty-state icon="shopping-bag" title="Your bag is empty" text="Add some food before checking out.">
+      <a routerLink="/menu" class="btn-primary">Browse the menu</a>
+    </app-empty-state>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="placeOrder()" novalidate class="mt-8 grid gap-8 lg:grid-cols-[1fr_400px]">
+      <div class="space-y-6">
+        @if (!auth.isLoggedIn()) {
+          <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-ember-100 px-5 py-4 text-sm">
+            <span><b>Checking out as a guest.</b> Sign in to save addresses and see your order history.</span>
+            <a routerLink="/login" [queryParams]="{ returnUrl: '/checkout' }" class="btn-dark btn-sm">Sign in</a>
+          </div>
+        }
+
+        <!-- 1. how -->
+        <section class="card p-6" aria-labelledby="how-h">
+          <h2 id="how-h" class="mb-4 flex items-center gap-3 text-xl font-bold"><span class="step">1</span> How would you like it?</h2>
+          <app-fulfillment-toggle />
+          @if (cart.fulfillmentType() === 'PICKUP') {
+            <p class="mt-4 flex items-start gap-2 text-sm text-charcoal-600">
+              <lucide-icon name="store" [size]="16" class="mt-0.5 shrink-0 text-tomato-500" />
+              Pick up at {{ settings.settings()?.address }} — usually ready in ~{{ settings.settings()?.pickupMinutes ?? 15 }} minutes.
+            </p>
+          }
+        </section>
+
+        <!-- 2. contact -->
+        <section class="card p-6" formGroupName="contact" aria-labelledby="contact-h">
+          <h2 id="contact-h" class="mb-4 flex items-center gap-3 text-xl font-bold"><span class="step">2</span> Your details</h2>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="sm:col-span-2">
+              <label class="label" for="name">Full name</label>
+              <input id="name" class="input" formControlName="name" autocomplete="name" />
+              @if (invalid('contact.name')) { <p class="field-error">Please enter your name.</p> }
+            </div>
+            <div>
+              <label class="label" for="email">Email</label>
+              <input id="email" type="email" class="input" formControlName="email" autocomplete="email" />
+              @if (invalid('contact.email')) { <p class="field-error">Please enter a valid email.</p> }
+            </div>
+            <div>
+              <label class="label" for="phone">Phone</label>
+              <input id="phone" type="tel" class="input" formControlName="phone" autocomplete="tel" placeholder="+1 555 0100" />
+              @if (invalid('contact.phone')) { <p class="field-error">Please enter a valid phone number.</p> }
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. address -->
+        @if (cart.fulfillmentType() === 'DELIVERY') {
+          <section class="card p-6" formGroupName="address" aria-labelledby="addr-h">
+            <h2 id="addr-h" class="mb-4 flex items-center gap-3 text-xl font-bold"><span class="step">3</span> Delivery address</h2>
+            @if (addresses().length) {
+              <div class="mb-4 flex flex-wrap gap-2" role="radiogroup" aria-label="Saved addresses">
+                @for (a of addresses(); track a.id) {
+                  <button type="button" role="radio" [attr.aria-checked]="selectedAddressId() === a.id"
+                          class="rounded-2xl border-2 px-3 py-2 text-left text-sm transition"
+                          [class]="selectedAddressId() === a.id ? 'border-tomato-500 bg-tomato-50' : 'border-charcoal-800/10 hover:border-charcoal-800/30'"
+                          (click)="useAddress(a)">
+                    <b class="block">{{ a.label }}</b><span class="text-xs text-charcoal-500">{{ a.line1 }}, {{ a.city }}</span>
+                  </button>
+                }
+              </div>
+            }
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div class="sm:col-span-2">
+                <label class="label" for="line1">Street address</label>
+                <input id="line1" class="input" formControlName="line1" autocomplete="address-line1" />
+                @if (invalid('address.line1')) { <p class="field-error">Please enter your street address.</p> }
+              </div>
+              <div class="sm:col-span-2">
+                <label class="label" for="line2">Apartment, suite, floor <span class="font-normal text-charcoal-400">(optional)</span></label>
+                <input id="line2" class="input" formControlName="line2" autocomplete="address-line2" />
+              </div>
+              <div>
+                <label class="label" for="city">City</label>
+                <input id="city" class="input" formControlName="city" autocomplete="address-level2" />
+                @if (invalid('address.city')) { <p class="field-error">Please enter your city.</p> }
+              </div>
+              <div>
+                <label class="label" for="postal">Postal code</label>
+                <input id="postal" class="input" formControlName="postalCode" autocomplete="postal-code" />
+              </div>
+            </div>
+            <div class="mt-4">
+              <label class="label" for="dinst">Delivery instructions <span class="font-normal text-charcoal-400">(optional)</span></label>
+              <input id="dinst" class="input" [formControl]="form.controls.deliveryInstructions" placeholder="Gate code, leave at door…" maxlength="500" />
+            </div>
+          </section>
+        }
+
+        <!-- 4. kitchen notes -->
+        <section class="card p-6" aria-labelledby="notes-h">
+          <h2 id="notes-h" class="mb-4 flex items-center gap-3 text-xl font-bold"><span class="step">{{ cart.fulfillmentType() === 'DELIVERY' ? 4 : 3 }}</span> Notes for the kitchen</h2>
+          <div class="grid gap-4">
+            <div>
+              <label class="label" for="allergy">Allergies <span class="font-normal text-charcoal-400">(optional)</span></label>
+              <input id="allergy" class="input" formControlName="allergyNotes" placeholder="e.g. severe peanut allergy" maxlength="500" />
+              <p class="mt-1 text-xs text-charcoal-400">We flag these on the kitchen ticket. Our kitchen handles common allergens, so we can’t guarantee zero cross-contact.</p>
+            </div>
+            <div>
+              <label class="label" for="special">Anything else? <span class="font-normal text-charcoal-400">(optional)</span></label>
+              <textarea id="special" rows="2" class="input" formControlName="specialInstructions" placeholder="Extra napkins, no cutlery…" maxlength="500"></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. payment -->
+        <section class="card p-6" aria-labelledby="pay-h">
+          <h2 id="pay-h" class="mb-4 flex items-center gap-3 text-xl font-bold"><span class="step">{{ cart.fulfillmentType() === 'DELIVERY' ? 5 : 4 }}</span> Payment</h2>
+          <div class="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Payment method">
+            @for (m of payments; track m.value) {
+              <label class="flex cursor-pointer items-start gap-3 rounded-2xl border-2 p-4 transition has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-ember-200"
+                     [class]="form.controls.paymentMethod.value === m.value ? 'border-tomato-500 bg-tomato-50' : 'border-charcoal-800/10 hover:border-charcoal-800/30'">
+                <input type="radio" class="sr-only" formControlName="paymentMethod" [value]="m.value" />
+                <lucide-icon [name]="m.icon" [size]="22" class="mt-0.5 text-tomato-500" />
+                <span>
+                  <b class="block text-sm">{{ m.value === 'CASH' ? (cart.fulfillmentType() === 'DELIVERY' ? 'Cash on delivery' : 'Pay at pickup') : m.label }}</b>
+                  <span class="text-xs text-charcoal-500">{{ m.hint }}</span>
+                </span>
+              </label>
+            }
+          </div>
+        </section>
+      </div>
+
+      <!-- summary -->
+      <aside class="lg:sticky lg:top-24 lg:self-start" aria-label="Order summary">
+        <div class="card space-y-5 p-6">
+          <h2 class="text-xl font-bold">Order summary</h2>
+          <ul class="max-h-64 space-y-3 overflow-y-auto pr-1">
+            @for (line of cart.lines(); track line.key; let i = $index) {
+              @let q = cart.quote()?.lines?.[i];
+              <li class="flex gap-3 text-sm">
+                <span class="grid h-6 min-w-6 place-items-center rounded-full bg-charcoal-800 px-1.5 text-xs font-bold text-cream-100">{{ line.quantity }}</span>
+                <span class="min-w-0 flex-1">
+                  <b class="block leading-tight">{{ line.name }}</b>
+                  @if (line.summary.length) { <span class="line-clamp-2 text-xs text-charcoal-500">{{ line.summary.join(' · ') }}</span> }
+                  @if (q && !q.valid) { <span class="block text-xs font-semibold text-tomato-600">{{ q.error }}</span> }
+                </span>
+                <span class="font-semibold tabular-nums">{{ (q?.lineTotal ?? line.displayUnitPrice * line.quantity) | money }}</span>
+              </li>
+            }
+          </ul>
+          <app-coupon-field />
+          <app-quote-summary [quote]="cart.quote()" [loading]="cart.quoteLoading()" [showDelivery]="cart.fulfillmentType() === 'DELIVERY'" />
+          @if (submitError()) {
+            <p class="rounded-xl bg-tomato-50 px-3 py-2.5 text-sm font-semibold text-tomato-700" role="alert">{{ submitError() }}</p>
+          } @else {
+            @for (issue of cart.quote()?.issues ?? []; track issue) {
+              <p class="rounded-xl bg-tomato-50 px-3 py-2 text-xs font-semibold text-tomato-700">{{ issue }}</p>
+            }
+          }
+          <button type="submit" class="btn-primary btn-lg w-full" [disabled]="!canSubmit()">
+            @if (submitting()) {
+              <lucide-icon name="loader" [size]="18" class="animate-spin" /> Placing order…
+            } @else {
+              Place order · {{ cart.quote()?.total ?? 0 | money }}
+            }
+          </button>
+          <p class="flex items-center justify-center gap-1.5 text-center text-xs text-charcoal-400">
+            <lucide-icon name="lock" [size]="12" /> Final price is calculated securely by the restaurant.
+          </p>
+        </div>
+      </aside>
+    </form>
+  }
+</div>

@@ -1,0 +1,43 @@
+<div class="mb-5 flex items-center justify-between">
+  <h2 class="text-xl font-bold">Saved addresses</h2>
+  <button type="button" class="btn-primary btn-sm" (click)="open(null)"><lucide-icon name="plus" [size]="15" /> Add address</button>
+</div>
+@if (list.loading() && !list.data()) {
+  <div class="grid gap-4 sm:grid-cols-2">@for (i of [0, 1]; track i) { <div class="skeleton h-32 rounded-3xl"></div> }</div>
+} @else if ((list.data() ?? []).length === 0) {
+  <app-empty-state icon="map-pin" title="No saved addresses" text="Save your home or work address for faster checkout." />
+} @else {
+  <ul class="grid gap-4 sm:grid-cols-2">
+    @for (a of list.data(); track a.id) {
+      <li class="card flex flex-col p-5">
+        <div class="flex items-center gap-2">
+          <lucide-icon name="map-pin" [size]="16" class="text-tomato-500" /><b>{{ a.label }}</b>
+          @if (a.defaultAddress) { <span class="chip bg-charcoal-800 text-cream-100">Default</span> }
+        </div>
+        <p class="mt-2 flex-1 text-sm text-charcoal-600">{{ a.line1 }}@if (a.line2) {, {{ a.line2 }}}<br />{{ a.city }} {{ a.postalCode }}</p>
+        @if (a.instructions) { <p class="mt-1 text-xs text-charcoal-400">{{ a.instructions }}</p> }
+        <div class="mt-4 flex gap-2">
+          <button type="button" class="btn-outline btn-sm" (click)="open(a)"><lucide-icon name="pencil" [size]="13" /> Edit</button>
+          <button type="button" class="btn-ghost btn-sm text-tomato-600" (click)="remove(a)"><lucide-icon name="trash-2" [size]="13" /> Delete</button>
+        </div>
+      </li>
+    }
+  </ul>
+}
+
+@if (editing() !== undefined) {
+  <app-modal [title]="editing() ? 'Edit address' : 'New address'" (closed)="editing.set(undefined)">
+    <form [formGroup]="form" (ngSubmit)="save()" class="grid gap-4" novalidate>
+      <div><label class="label" for="label">Label</label><input id="label" class="input" formControlName="label" placeholder="Home, Work…" /></div>
+      <div><label class="label" for="l1">Street address</label><input id="l1" class="input" formControlName="line1" autocomplete="address-line1" /></div>
+      <div><label class="label" for="l2">Apt / suite <span class="font-normal text-charcoal-400">(optional)</span></label><input id="l2" class="input" formControlName="line2" /></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="label" for="city">City</label><input id="city" class="input" formControlName="city" /></div>
+        <div><label class="label" for="pc">Postal code</label><input id="pc" class="input" formControlName="postalCode" /></div>
+      </div>
+      <div><label class="label" for="ins">Instructions <span class="font-normal text-charcoal-400">(optional)</span></label><input id="ins" class="input" formControlName="instructions" /></div>
+      <label class="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" class="h-4 w-4 accent-tomato-500" formControlName="defaultAddress" /> Use as default</label>
+      <button type="submit" class="btn-primary" [disabled]="form.invalid || saving()">Save address</button>
+    </form>
+  </app-modal>
+}

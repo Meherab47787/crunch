@@ -1,0 +1,38 @@
+@if (orders.error()) {
+  <app-error-state [message]="orders.error()!" (retry)="orders.reload()" />
+} @else if (orders.loading() && !orders.data()) {
+  <div class="space-y-3">@for (i of [0, 1, 2]; track i) { <div class="skeleton h-24 rounded-3xl"></div> }</div>
+} @else if (orders.data()?.totalElements === 0) {
+  <app-empty-state icon="receipt" title="No orders yet" text="Once you order, you’ll be able to track and reorder from here.">
+    <a routerLink="/menu" class="btn-primary">Start an order</a>
+  </app-empty-state>
+} @else {
+  <ul class="space-y-3">
+    @for (o of orders.data()?.content ?? []; track o.id) {
+      <li>
+        <a [routerLink]="['/account/orders', o.id]" class="card flex flex-col gap-3 p-5 transition hover:shadow-lift sm:flex-row sm:items-center">
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <b>{{ o.orderNumber }}</b>
+              <app-status-badge [status]="o.status" />
+              @if (active(o)) { <span class="flex items-center gap-1 text-xs font-semibold text-basil-600"><span class="h-1.5 w-1.5 animate-pulse rounded-full bg-basil-500"></span> Live</span> }
+            </div>
+            <p class="mt-1 truncate text-sm text-charcoal-600">{{ o.itemsPreview }}</p>
+            <p class="mt-0.5 text-xs text-charcoal-400">{{ o.createdAt | date: 'medium' }} · {{ o.fulfillmentType === 'DELIVERY' ? 'Delivery' : 'Pickup' }}</p>
+          </div>
+          <div class="flex items-center gap-3 sm:text-right">
+            <b class="text-lg tabular-nums">{{ o.total | money }}</b>
+            <lucide-icon name="chevron-right" [size]="18" class="text-charcoal-400" />
+          </div>
+        </a>
+      </li>
+    }
+  </ul>
+  @if ((orders.data()?.totalPages ?? 0) > 1) {
+    <div class="mt-6 flex items-center justify-center gap-3">
+      <button type="button" class="btn-outline btn-sm" [disabled]="page() === 0" (click)="go(page() - 1)">Previous</button>
+      <span class="text-sm text-charcoal-500">Page {{ page() + 1 }} of {{ orders.data()?.totalPages }}</span>
+      <button type="button" class="btn-outline btn-sm" [disabled]="orders.data()?.last" (click)="go(page() + 1)">Next</button>
+    </div>
+  }
+}

@@ -1,0 +1,34 @@
+<div class="grid gap-6 lg:grid-cols-2">
+  <form [formGroup]="profile" (ngSubmit)="saveProfile()" class="card space-y-4 p-6" novalidate>
+    <h2 class="text-xl font-bold">Personal details</h2>
+    <div>
+      <label class="label" for="email">Email</label>
+      <input id="email" class="input bg-cream-100" [value]="auth.user()?.email" disabled />
+    </div>
+    <div>
+      <label class="label" for="fullName">Full name</label>
+      <input id="fullName" class="input" formControlName="fullName" autocomplete="name" />
+      @if (profile.controls.fullName.invalid && profile.controls.fullName.touched) { <p class="field-error">Enter your name.</p> }
+    </div>
+    <div>
+      <label class="label" for="phone">Phone</label>
+      <input id="phone" type="tel" class="input" formControlName="phone" autocomplete="tel" />
+      @if (profile.controls.phone.invalid && profile.controls.phone.touched) { <p class="field-error">Enter a valid phone number.</p> }
+    </div>
+    <button type="submit" class="btn-dark" [disabled]="savingProfile() || profile.pristine">Save changes</button>
+  </form>
+
+  <form [formGroup]="password" (ngSubmit)="savePassword()" class="card space-y-4 p-6" novalidate>
+    <h2 class="text-xl font-bold">Change password</h2>
+    <div>
+      <label class="label" for="cur">Current password</label>
+      <input id="cur" type="password" class="input" formControlName="currentPassword" autocomplete="current-password" />
+    </div>
+    <div>
+      <label class="label" for="new">New password</label>
+      <input id="new" type="password" class="input" formControlName="newPassword" autocomplete="new-password" />
+      <p class="mt-1 text-xs text-charcoal-400">At least 8 characters.</p>
+    </div>
+    <button type="submit" class="btn-dark" [disabled]="savingPassword() || password.invalid">Update password</button>
+  </form>
+</div>

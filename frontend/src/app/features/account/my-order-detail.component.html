@@ -1,0 +1,57 @@
+<a routerLink="/account/orders" class="no-print mb-4 inline-flex items-center gap-1.5 text-sm font-bold text-charcoal-500 hover:text-charcoal-900">
+  <lucide-icon name="arrow-left" [size]="15" /> All orders
+</a>
+@if (error() && !order()) {
+  <app-empty-state icon="receipt" title="Order not found" [text]="error()!" />
+} @else if (!order()) {
+  <div class="grid gap-6 lg:grid-cols-[1fr_360px]"><div class="skeleton h-72 rounded-3xl"></div><div class="skeleton h-72 rounded-3xl"></div></div>
+} @else {
+  @let o = order()!;
+  <div class="no-print">
+    <app-order-view [order]="o">
+      <div items-footer>
+        @if (o.status === 'DELIVERED') {
+          <div class="mt-4 rounded-2xl bg-ember-50 p-4">
+            <p class="mb-2 text-sm font-bold">How was it? Rate your items</p>
+            <div class="flex flex-wrap gap-2">
+              @for (item of reviewable(o); track item.id) {
+                @if (o.reviewedProductIds.includes(item.productId!)) {
+                  <span class="chip bg-basil-500/10 text-basil-600"><lucide-icon name="check" [size]="11" /> {{ item.productName }}</span>
+                } @else {
+                  <button type="button" class="btn-outline btn-sm" (click)="startReview(item)"><lucide-icon name="star" [size]="13" /> {{ item.productName }}</button>
+                }
+              }
+            </div>
+          </div>
+        }
+      </div>
+      <div class="card space-y-2 p-6">
+        <button type="button" class="btn-primary w-full" (click)="reorder()" [disabled]="busy()"><lucide-icon name="refresh-cw" [size]="16" /> Order again</button>
+        @if (o.cancellableByCustomer) {
+          <button type="button" class="btn-danger w-full" (click)="cancel()" [disabled]="busy()"><lucide-icon name="ban" [size]="16" /> Cancel order</button>
+        }
+        <button type="button" class="btn-ghost w-full" (click)="print()"><lucide-icon name="printer" [size]="16" /> Print receipt</button>
+        @if (active()) {
+          <p class="pt-1 text-center text-xs text-charcoal-400">Updates automatically every 15 seconds</p>
+        }
+      </div>
+    </app-order-view>
+  </div>
+  <app-receipt [order]="o" class="print-only" />
+}
+
+@if (reviewing(); as item) {
+  <app-modal [title]="'Review ' + item.productName" (closed)="reviewing.set(null)">
+    <form (ngSubmit)="submitReview(item)" class="space-y-4">
+      <div class="flex justify-center gap-1" role="radiogroup" aria-label="Rating">
+        @for (n of [1, 2, 3, 4, 5]; track n) {
+          <button type="button" role="radio" [attr.aria-checked]="rating() === n" [attr.aria-label]="n + ' stars'"
+                  class="text-4xl transition hover:scale-110" [class]="n <= rating() ? 'text-ember-400' : 'text-charcoal-800/15'" (click)="rating.set(n)">★</button>
+        }
+      </div>
+      <label class="label" for="comment">Tell us more <span class="font-normal text-charcoal-400">(optional)</span></label>
+      <textarea id="comment" name="comment" rows="3" maxlength="1000" class="input" [(ngModel)]="comment"></textarea>
+      <button type="submit" class="btn-primary w-full" [disabled]="busy()">Submit review</button>
+    </form>
+  </app-modal>
+}

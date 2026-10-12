@@ -1,0 +1,9 @@
+<div class="space-y-3 p-4" aria-busy="true" aria-label="Loading">
+  @for (r of rowsArr(); track r) {
+    <div class="flex items-center gap-4">
+      @for (c of colsArr(); track c) {
+        <div class="skeleton h-5" [style.flex]="c === 0 ? 2 : 1"></div>
+      }
+    </div>
+  }
+</div>

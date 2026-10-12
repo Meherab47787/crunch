@@ -1,0 +1,12 @@
+<div class="inline-flex items-center rounded-full border border-charcoal-800/15 bg-white"
+     [class.h-9]="size() === 'sm'" [class.h-11]="size() === 'md'">
+  <button type="button" class="grid h-full w-9 place-items-center rounded-full text-charcoal-600 hover:bg-charcoal-800/5 disabled:opacity-40"
+          [disabled]="value() <= min()" (click)="change.emit(value() - 1)" [attr.aria-label]="'Decrease quantity of ' + label()">
+    <lucide-icon [name]="value() <= 1 && allowRemove() ? 'trash-2' : 'minus'" [size]="15" />
+  </button>
+  <span class="min-w-7 text-center text-sm font-bold tabular-nums" aria-live="polite">{{ value() }}</span>
+  <button type="button" class="grid h-full w-9 place-items-center rounded-full text-charcoal-600 hover:bg-charcoal-800/5 disabled:opacity-40"
+          [disabled]="value() >= max()" (click)="change.emit(value() + 1)" [attr.aria-label]="'Increase quantity of ' + label()">
+    <lucide-icon name="plus" [size]="15" />
+  </button>
+</div>

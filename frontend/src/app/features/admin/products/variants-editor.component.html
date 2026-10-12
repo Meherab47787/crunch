@@ -1,0 +1,32 @@
+<div class="space-y-3">
+  @if (variants().length === 0) {
+    <p class="rounded-xl border border-dashed border-charcoal-800/15 p-4 text-center text-sm text-charcoal-500">No variants — the product is sold at its base price.</p>
+  }
+  @for (v of variants().controls; track v; let i = $index) {
+    <fieldset [formGroup]="v" class="grid grid-cols-2 items-end gap-3 rounded-xl border border-charcoal-800/10 p-3 sm:grid-cols-[2fr_1fr_auto_auto_auto]">
+      <legend class="sr-only">Variant {{ i + 1 }}</legend>
+      <div class="col-span-2 sm:col-span-1">
+        <label class="label !text-xs" [for]="'v-name-' + i">Name</label>
+        <input [id]="'v-name-' + i" class="input" formControlName="name" placeholder='e.g. Large 14"' />
+        @if (err(v, 'name', 'Name'); as e) { <p class="field-error">{{ e }}</p> }
+      </div>
+      <div>
+        <label class="label !text-xs" [for]="'v-price-' + i">Price change</label>
+        <input [id]="'v-price-' + i" class="input" type="number" step="0.01" formControlName="priceDelta" />
+        @if (err(v, 'priceDelta', 'Price change'); as e) { <p class="field-error">{{ e }}</p> }
+      </div>
+      <label class="flex h-10 items-center gap-2 text-sm">
+        <input type="radio" [name]="radioName" [checked]="v.controls.defaultVariant.value" (change)="makeDefault(i)" class="h-4 w-4 accent-tomato-500" /> Default
+      </label>
+      <label class="flex h-10 items-center gap-2 text-sm">
+        <input type="checkbox" formControlName="available" class="h-4 w-4 accent-tomato-500" /> Available
+      </label>
+      <div class="flex h-10 items-center justify-end gap-1">
+        <button type="button" class="btn-ghost btn-sm !px-2" [disabled]="i === 0" (click)="move(i, -1)" [attr.aria-label]="'Move variant ' + (i + 1) + ' up'"><lucide-icon [img]="upIcon" [size]="14" /></button>
+        <button type="button" class="btn-ghost btn-sm !px-2" [disabled]="i === variants().length - 1" (click)="move(i, 1)" [attr.aria-label]="'Move variant ' + (i + 1) + ' down'"><lucide-icon name="chevron-down" [size]="14" /></button>
+        <button type="button" class="btn-ghost btn-sm !px-2 text-tomato-600" (click)="remove(i)" [attr.aria-label]="'Remove variant ' + (i + 1)"><lucide-icon name="trash-2" [size]="14" /></button>
+      </div>
+    </fieldset>
+  }
+  <button type="button" class="btn-outline btn-sm" (click)="add()"><lucide-icon name="plus" [size]="14" /> Add variant</button>
+</div>

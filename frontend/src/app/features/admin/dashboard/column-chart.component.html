@@ -1,0 +1,63 @@
+<div class="relative" [class.opacity-50]="dim()" [class.transition-opacity]="true">
+  @if (!tableView()) {
+    <div class="relative w-full" [style.height.px]="totalH">
+      <svg [attr.width]="width()" [attr.height]="totalH" role="img" [attr.aria-label]="summary()" class="block overflow-visible">
+        <!-- grid + y ticks -->
+        @for (t of ticks(); track t.value) {
+          <line [attr.x1]="yAxisW" [attr.x2]="width()" [attr.y1]="t.y" [attr.y2]="t.y" stroke="#e7e5e4" stroke-width="1" shape-rendering="crispEdges" />
+          <text [attr.x]="yAxisW - 8" [attr.y]="t.y" text-anchor="end" dominant-baseline="middle" class="fill-charcoal-400 text-[11px] tabular-nums">{{ t.label }}</text>
+        }
+        <!-- columns -->
+        @for (b of bars(); track b.i) {
+          <path [attr.d]="b.path" [attr.fill]="active() === b.i ? '#cc2f19' : '#e8442b'" />
+        }
+        <!-- direct labels: max + latest only -->
+        @for (b of bars(); track b.i) {
+          @if (b.labelled && b.value > 0) {
+            <text [attr.x]="b.cx" [attr.y]="b.top - 6" text-anchor="middle" class="fill-charcoal-700 text-[11px] font-semibold tabular-nums">{{ b.short }}</text>
+          }
+        }
+        <!-- baseline -->
+        <line [attr.x1]="yAxisW" [attr.x2]="width()" [attr.y1]="baseY" [attr.y2]="baseY" stroke="#d6d3d1" stroke-width="1" shape-rendering="crispEdges" />
+        <!-- x labels (thinned to avoid collisions) -->
+        @for (b of bars(); track b.i) {
+          @if (b.showX) {
+            <text [attr.x]="b.cx" [attr.y]="baseY + 18" text-anchor="middle" class="fill-charcoal-400 text-[11px]">{{ b.label }}</text>
+          }
+        }
+        <!-- hit targets: full band, keyboard focusable -->
+        @for (b of bars(); track b.i) {
+          <rect [attr.x]="b.bandX" [attr.y]="padTop" [attr.width]="b.bandW" [attr.height]="plotH" fill="transparent"
+                tabindex="0" role="graphics-symbol" [attr.aria-label]="b.fullLabel + ': ' + b.formatted + (b.secondary ? ', ' + b.secondary : '')"
+                class="cursor-default outline-none"
+                (pointerenter)="active.set(b.i)" (pointerleave)="active.set(null)"
+                (focus)="active.set(b.i)" (blur)="active.set(null)" />
+        }
+      </svg>
+
+      @if (tooltip(); as tt) {
+        <div class="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-xl border border-charcoal-800/10 bg-white px-3 py-2 text-xs shadow-card"
+             [style.left.px]="tt.x" [style.top.px]="tt.y - 8" role="status">
+          <b class="block whitespace-nowrap text-sm text-charcoal-900 tabular-nums">{{ tt.formatted }}</b>
+          <span class="block whitespace-nowrap text-charcoal-500">{{ tt.fullLabel }}@if (tt.secondary) { · {{ tt.secondary }} }</span>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="max-h-72 overflow-auto rounded-xl border border-charcoal-800/10">
+      <table class="table-base">
+        <caption class="sr-only">{{ ariaLabel() }}</caption>
+        <thead class="sticky top-0 bg-white"><tr><th scope="col">Period</th><th scope="col" class="text-right">{{ valueName() }}</th>@if (secondaryName()) {<th scope="col" class="text-right">{{ secondaryName() }}</th>}</tr></thead>
+        <tbody>
+          @for (p of points(); track $index) {
+            <tr>
+              <td>{{ p.fullLabel }}</td>
+              <td class="text-right font-semibold tabular-nums">{{ format()(p.value) }}</td>
+              @if (secondaryName()) {<td class="text-right tabular-nums text-charcoal-500">{{ p.secondary }}</td>}
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

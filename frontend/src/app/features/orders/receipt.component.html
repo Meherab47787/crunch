@@ -1,0 +1,20 @@
+@let o = order();
+<div class="mx-auto max-w-sm font-mono text-[12px] leading-snug text-black">
+  <p class="text-center text-base font-bold">{{ settings.settings()?.restaurantName ?? 'Crust & Crunch' }}</p>
+  <p class="text-center">{{ settings.settings()?.address }}<br />{{ settings.settings()?.phone }}</p>
+  <p class="my-2 border-t border-dashed border-black"></p>
+  <p>Order: <b>{{ o.orderNumber }}</b><br />{{ o.createdAt | date: 'medium' }}<br />{{ o.fulfillmentType }} · {{ o.contact.name }}</p>
+  <p class="my-2 border-t border-dashed border-black"></p>
+  @for (i of o.items; track i.id) {
+    <div class="flex justify-between"><span>{{ i.quantity }}x {{ i.productName }}@if (i.variantName) { ({{ i.variantName }})}</span><span>{{ i.lineTotal | money }}</span></div>
+    @for (c of i.customizations; track $index) { <div class="pl-4">- {{ c.optionName }}</div> }
+  }
+  <p class="my-2 border-t border-dashed border-black"></p>
+  <div class="flex justify-between"><span>Subtotal</span><span>{{ o.subtotal | money }}</span></div>
+  @if (o.discountTotal > 0) { <div class="flex justify-between"><span>Discounts</span><span>-{{ o.discountTotal | money }}</span></div> }
+  @if (o.deliveryFee > 0) { <div class="flex justify-between"><span>Delivery</span><span>{{ o.deliveryFee | money }}</span></div> }
+  <div class="flex justify-between"><span>Tax</span><span>{{ o.tax | money }}</span></div>
+  <div class="flex justify-between font-bold"><span>TOTAL</span><span>{{ o.total | money }}</span></div>
+  <p>Payment: {{ o.paymentMethod }} ({{ o.paymentStatus }})</p>
+  <p class="mt-3 text-center">Thank you!</p>
+</div>

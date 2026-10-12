@@ -1,0 +1,12 @@
+<span class="inline-flex items-center gap-1 text-xs font-semibold text-charcoal-600" [attr.aria-label]="label()">
+  <span class="relative inline-block leading-none tracking-[1px]" aria-hidden="true">
+    <span class="text-charcoal-800/15">★★★★★</span>
+    <span class="absolute inset-0 overflow-hidden text-ember-400" [style.width.%]="pct()">★★★★★</span>
+  </span>
+  @if (showValue()) {
+    <span>{{ rating().toFixed(1) }}</span>
+    @if (count() != null) {
+      <span class="font-normal text-charcoal-400">({{ count() }})</span>
+    }
+  }
+</span>

@@ -1,0 +1,74 @@
+<app-modal [title]="promotion() ? 'Edit promotion' : 'New promotion'" size="lg" (closed)="closed.emit()">
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate class="space-y-4">
+    @if (formError()) { <div role="alert" class="rounded-xl bg-tomato-50 p-3 text-sm text-tomato-800">{{ formError() }}</div> }
+    <div>
+      <label class="label" for="pm-name">Name *</label>
+      <input id="pm-name" class="input" formControlName="name" placeholder="e.g. Pizza Tuesday" />
+      @if (err(form.controls.name, 'Name'); as e) { <p class="field-error">{{ e }}</p> }
+    </div>
+    <div>
+      <label class="label" for="pm-desc">Description</label>
+      <textarea id="pm-desc" class="input min-h-16" formControlName="description"></textarea>
+      @if (err(form.controls.description, 'Description'); as e) { <p class="field-error">{{ e }}</p> }
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="label" for="pm-type">Discount type</label>
+        <select id="pm-type" class="input" formControlName="discountType"><option value="PERCENT">Percent</option><option value="FIXED">Fixed amount per item</option></select>
+      </div>
+      <div>
+        <label class="label" for="pm-val">{{ form.controls.discountType.value === 'PERCENT' ? 'Percent off *' : 'Amount off *' }}</label>
+        <input id="pm-val" class="input" type="number" step="0.01" min="0.01" formControlName="discountValue" />
+        @if (err(form.controls.discountValue, 'Value'); as e) { <p class="field-error">{{ e }}</p> }
+      </div>
+    </div>
+    <fieldset>
+      <legend class="label">Applies to</legend>
+      <div class="mb-2 inline-flex rounded-full bg-charcoal-800/5 p-1">
+        <label class="cursor-pointer rounded-full px-4 py-1.5 text-sm font-semibold has-[:checked]:bg-white has-[:checked]:shadow-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ember-400">
+          <input type="radio" class="sr-only" name="target" value="CATEGORY" [checked]="target() === 'CATEGORY'" (change)="setTarget('CATEGORY')" /> A category
+        </label>
+        <label class="cursor-pointer rounded-full px-4 py-1.5 text-sm font-semibold has-[:checked]:bg-white has-[:checked]:shadow-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ember-400">
+          <input type="radio" class="sr-only" name="target" value="PRODUCT" [checked]="target() === 'PRODUCT'" (change)="setTarget('PRODUCT')" /> A product
+        </label>
+      </div>
+      @if (target() === 'CATEGORY') {
+        <label class="sr-only" for="pm-cat">Category</label>
+        <select id="pm-cat" class="input" formControlName="categoryId">
+          <option [ngValue]="null" disabled>Select a category…</option>
+          @for (c of categories(); track c.id) { <option [ngValue]="c.id">{{ c.name }}</option> }
+        </select>
+      } @else {
+        <label class="sr-only" for="pm-prod">Product</label>
+        <select id="pm-prod" class="input" formControlName="productId">
+          <option [ngValue]="null" disabled>Select a product…</option>
+          @for (p of products(); track p.id) { <option [ngValue]="p.id">{{ p.name }} · {{ p.categoryName }}</option> }
+        </select>
+      }
+      @if (targetError()) { <p class="field-error">{{ targetError() }}</p> }
+    </fieldset>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div><label class="label" for="pm-start">Starts</label><input id="pm-start" class="input" type="datetime-local" formControlName="startsAt" /></div>
+      <div>
+        <label class="label" for="pm-end">Ends</label><input id="pm-end" class="input" type="datetime-local" formControlName="endsAt" />
+        @if (err(form.controls.endsAt, 'End'); as e) { <p class="field-error">{{ e }}</p> }
+      </div>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-[1fr_auto]">
+      <div>
+        <label class="label" for="pm-img">Banner image URL</label>
+        <input id="pm-img" class="input" formControlName="imageUrl" placeholder="https://…" />
+        @if (err(form.controls.imageUrl, 'Image URL'); as e) { <p class="field-error">{{ e }}</p> }
+        <div class="mt-2"><app-image-upload-button (uploaded)="form.controls.imageUrl.setValue($event)" /></div>
+      </div>
+      @if (form.controls.imageUrl.value) { <img [src]="form.controls.imageUrl.value" alt="Preview" class="h-24 w-32 rounded-xl object-cover" /> }
+    </div>
+    <label class="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" class="h-4 w-4 accent-tomato-500" formControlName="active" /> Active</label>
+    <div class="flex justify-end gap-2 pt-2">
+      <button type="button" class="btn-outline" (click)="closed.emit()">Cancel</button>
+      <button type="submit" class="btn-primary" [disabled]="saving()">
+        @if (saving()) { <span class="inline-flex animate-spin" aria-hidden="true"><lucide-icon name="loader" [size]="16" /></span> } {{ promotion() ? 'Save' : 'Create' }}
+      </button>
+    </div>
+  </form>
+</app-modal>

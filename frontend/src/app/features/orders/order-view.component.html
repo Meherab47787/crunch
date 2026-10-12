@@ -1,0 +1,114 @@
+@let o = order();
+<div class="grid gap-6 lg:grid-cols-[1fr_360px]">
+  <div class="space-y-6">
+    <!-- progress -->
+    <section class="card p-6" aria-labelledby="progress-h">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-widest text-charcoal-400">Order {{ o.orderNumber }}</p>
+          <h2 id="progress-h" class="mt-1 text-2xl font-extrabold">{{ headline() }}</h2>
+          @if (o.estimatedReadyAt && active()) {
+            <p class="mt-1 flex items-center gap-1.5 text-sm text-charcoal-600">
+              <lucide-icon name="timer" [size]="15" class="text-tomato-500" />
+              {{ o.fulfillmentType === 'DELIVERY' ? 'Estimated arrival' : 'Ready around' }} <b>{{ o.estimatedReadyAt | date: 'shortTime' }}</b>
+            </p>
+          }
+        </div>
+        <app-status-badge [status]="o.status" />
+      </div>
+
+      @if (o.status === 'CANCELLED') {
+        <p class="mt-5 rounded-2xl bg-tomato-50 px-4 py-3 text-sm text-tomato-800">
+          This order was cancelled{{ o.cancelReason ? ': ' + o.cancelReason : '.' }}
+          @if (o.paymentStatus === 'REFUNDED') { Your payment has been refunded. }
+        </p>
+      } @else {
+        <ol class="mt-6 grid gap-2" [style.grid-template-columns]="'repeat(' + steps().length + ', minmax(0, 1fr))'">
+          @for (s of steps(); track s.status; let i = $index) {
+            @let done = i <= currentIndex();
+            <li class="relative flex flex-col items-center text-center">
+              @if (i > 0) {
+                <span class="absolute right-1/2 top-5 h-1 w-full -translate-y-1/2 rounded-full transition-colors duration-500"
+                      [class]="done ? 'bg-tomato-500' : 'bg-charcoal-800/10'"></span>
+              }
+              <span class="relative z-10 grid h-10 w-10 place-items-center rounded-full transition duration-500"
+                    [class]="done ? 'bg-tomato-500 text-white' : 'bg-cream-200 text-charcoal-400'"
+                    [class.ring-4]="i === currentIndex() && active()" [class.ring-tomato-200]="i === currentIndex() && active()"
+                    [class.animate-pulse]="i === currentIndex() && active()">
+                <lucide-icon [name]="s.icon" [size]="18" />
+              </span>
+              <span class="mt-2 text-[11px] font-bold leading-tight sm:text-xs" [class.text-charcoal-400]="!done">{{ s.label }}</span>
+              @if (s.at) { <span class="text-[10px] text-charcoal-400">{{ s.at | date: 'shortTime' }}</span> }
+            </li>
+          }
+        </ol>
+      }
+    </section>
+
+    <!-- items -->
+    <section class="card p-6" aria-labelledby="items-h">
+      <h2 id="items-h" class="mb-4 text-xl font-bold">Items</h2>
+      <ul class="divide-y divide-charcoal-800/5">
+        @for (item of o.items; track item.id) {
+          <li class="flex gap-4 py-3">
+            <span class="grid h-7 min-w-7 place-items-center rounded-full bg-charcoal-800 px-1.5 text-xs font-bold text-cream-100">{{ item.quantity }}</span>
+            <div class="min-w-0 flex-1">
+              <p class="font-bold">{{ item.productName }}@if (item.variantName) { <span class="font-medium text-charcoal-500"> · {{ item.variantName }}</span> }</p>
+              @if (item.customizations.length) {
+                <ul class="mt-0.5 text-sm text-charcoal-500">
+                  @for (c of item.customizations; track $index) {
+                    <li>{{ c.kind === 'COMBO_CHOICE' ? '↳' : '+' }} {{ c.optionName }}@if (c.priceDelta > 0) { <span class="text-charcoal-400"> ({{ c.priceDelta | money: true }})</span> }</li>
+                  }
+                </ul>
+              }
+              @if (item.notes) { <p class="mt-0.5 text-sm italic text-charcoal-500">“{{ item.notes }}”</p> }
+            </div>
+            <div class="text-right">
+              <p class="font-semibold tabular-nums">{{ item.lineTotal | money }}</p>
+              @if (item.discount > 0) { <p class="text-xs text-basil-600">−{{ item.discount | money }} deal</p> }
+            </div>
+          </li>
+        }
+      </ul>
+      <ng-content select="[items-footer]" />
+    </section>
+  </div>
+
+  <aside class="space-y-6">
+    <section class="card p-6 text-sm" aria-labelledby="totals-h">
+      <h2 id="totals-h" class="mb-3 text-lg font-bold">Payment</h2>
+      <dl class="space-y-2">
+        <div class="flex justify-between"><dt class="text-charcoal-500">Subtotal</dt><dd class="tabular-nums">{{ o.subtotal | money }}</dd></div>
+        @if (o.discountTotal > 0) {
+          <div class="flex justify-between text-basil-600"><dt>Discounts @if (o.couponCode) { ({{ o.couponCode }}) }</dt><dd class="tabular-nums">−{{ o.discountTotal | money }}</dd></div>
+        }
+        @if (o.fulfillmentType === 'DELIVERY') {
+          <div class="flex justify-between"><dt class="text-charcoal-500">Delivery</dt><dd class="tabular-nums">{{ o.deliveryFee > 0 ? (o.deliveryFee | money) : 'Free' }}</dd></div>
+        }
+        <div class="flex justify-between"><dt class="text-charcoal-500">Tax</dt><dd class="tabular-nums">{{ o.tax | money }}</dd></div>
+        <div class="flex justify-between border-t border-charcoal-800/10 pt-2 text-base font-extrabold"><dt>Total</dt><dd class="tabular-nums">{{ o.total | money }}</dd></div>
+      </dl>
+      <p class="mt-3 flex items-center gap-2 rounded-xl bg-cream-100 px-3 py-2 text-xs">
+        <lucide-icon [name]="o.paymentMethod === 'CASH' ? 'banknote' : 'credit-card'" [size]="14" />
+        {{ o.paymentMethod === 'CASH' ? 'Cash' : 'Paid online' }} ·
+        <b>{{ o.paymentStatus === 'PAID' ? 'Paid' : o.paymentStatus === 'REFUNDED' ? 'Refunded' : 'Due on ' + (o.fulfillmentType === 'DELIVERY' ? 'delivery' : 'pickup') }}</b>
+      </p>
+    </section>
+
+    <section class="card p-6 text-sm" aria-labelledby="where-h">
+      <h2 id="where-h" class="mb-3 text-lg font-bold">{{ o.fulfillmentType === 'DELIVERY' ? 'Delivering to' : 'Pickup' }}</h2>
+      @if (o.address) {
+        <p>{{ o.address.line1 }}@if (o.address.line2) {, {{ o.address.line2 }}}<br />{{ o.address.city }} {{ o.address.postalCode }}</p>
+        @if (o.deliveryInstructions) { <p class="mt-2 text-charcoal-500">Note: {{ o.deliveryInstructions }}</p> }
+      } @else {
+        <p class="text-charcoal-600">Collect at the counter — just give your name and order number.</p>
+      }
+      <p class="mt-3 text-charcoal-500">{{ o.contact.name }} · {{ o.contact.phone }}</p>
+      @if (o.allergyNotes) {
+        <p class="mt-3 rounded-xl bg-ember-100 px-3 py-2 text-xs font-semibold text-ember-700">Allergy note sent to kitchen: {{ o.allergyNotes }}</p>
+      }
+      <p class="mt-3 text-xs text-charcoal-400">Placed {{ o.createdAt | date: 'medium' }}</p>
+    </section>
+    <ng-content />
+  </aside>
+</div>

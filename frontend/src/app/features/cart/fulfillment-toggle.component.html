@@ -1,0 +1,11 @@
+<div class="grid grid-cols-2 gap-1 rounded-2xl bg-charcoal-800/5 p-1" role="radiogroup" aria-label="Delivery or pickup">
+  @for (opt of options; track opt.value) {
+    <button type="button" role="radio" [attr.aria-checked]="cart.fulfillmentType() === opt.value"
+            class="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition"
+            [class]="cart.fulfillmentType() === opt.value ? 'bg-white text-charcoal-900 shadow-card' : 'text-charcoal-500 hover:text-charcoal-800'"
+            (click)="cart.setFulfillment(opt.value)">
+      <lucide-icon [name]="opt.icon" [size]="16" /> {{ opt.label }}
+      <span class="hidden text-xs font-medium text-charcoal-400 sm:inline">~{{ opt.value === 'DELIVERY' ? (settings.settings()?.deliveryMinutes ?? 35) : (settings.settings()?.pickupMinutes ?? 15) }}m</span>
+    </button>
+  }
+</div>

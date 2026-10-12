@@ -1,0 +1,196 @@
+<a routerLink="/admin/products" class="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-charcoal-500 hover:text-charcoal-900">
+  <lucide-icon name="arrow-left" [size]="16" /> All products
+</a>
+
+@if (isEdit() && product.error() && !product.data()) {
+  <app-error-state [message]="product.error()!" (retry)="product.reload()" />
+} @else if (isEdit() && !product.data()) {
+  <div class="skeleton mb-6 h-10 w-64"></div>
+  <div class="grid gap-4 lg:grid-cols-3"><div class="skeleton h-[32rem] rounded-2xl lg:col-span-2"></div><div class="skeleton h-80 rounded-2xl"></div></div>
+} @else {
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-widest text-charcoal-400">{{ isEdit() ? 'Edit product' : 'New product' }}</p>
+        <h1 class="text-2xl font-extrabold text-charcoal-900 sm:text-3xl">{{ form.controls.name.value || 'Untitled product' }}</h1>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        @if (isEdit() && product.data(); as p) {
+          <a [routerLink]="['/menu/item', p.summary.slug]" target="_blank" rel="noopener" class="btn-ghost btn-sm"><lucide-icon name="eye" [size]="14" /> View on menu</a>
+        }
+        <a routerLink="/admin/products" class="btn-outline btn-sm">Cancel</a>
+        <button type="submit" class="btn-primary btn-sm" [disabled]="saving()">
+          @if (saving()) { <span class="inline-flex animate-spin" aria-hidden="true"><lucide-icon name="loader" [size]="14" /></span> } @else { <lucide-icon name="check" [size]="14" /> }
+          {{ isEdit() ? 'Save changes' : 'Create product' }}
+        </button>
+      </div>
+    </div>
+
+    @if (formError()) {
+      <div role="alert" class="mb-4 rounded-2xl border border-tomato-200 bg-tomato-50 p-4 text-sm font-medium text-tomato-800">{{ formError() }}</div>
+    }
+
+    <div class="grid gap-4 lg:grid-cols-3">
+      <div class="space-y-4 lg:col-span-2">
+        <!-- basics -->
+        <section class="admin-card space-y-4 p-5" aria-labelledby="basics-h">
+          <h2 id="basics-h" class="text-base font-bold">Basics</h2>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="label" for="pe-name">Name *</label>
+              <input id="pe-name" class="input" formControlName="name" (blur)="autoSlug()" />
+              @if (err('name', 'Name'); as e) { <p class="field-error">{{ e }}</p> }
+            </div>
+            <div>
+              <label class="label" for="pe-slug">Slug</label>
+              <input id="pe-slug" class="input" formControlName="slug" placeholder="auto from name" />
+              @if (err('slug', 'Slug'); as e) { <p class="field-error">{{ e === 'Slug has an invalid format.' ? 'Use lowercase words separated by dashes.' : e }}</p> }
+            </div>
+            <div>
+              <label class="label" for="pe-cat">Category *</label>
+              <select id="pe-cat" class="input" formControlName="categoryId">
+                <option [ngValue]="null" disabled>Select a category…</option>
+                @for (c of categories.data() ?? []; track c.id) { <option [ngValue]="c.id">{{ c.name }}{{ c.active ? '' : ' (inactive)' }}</option> }
+              </select>
+              @if (err('categoryId', 'Category'); as e) { <p class="field-error">{{ e }}</p> }
+            </div>
+            <fieldset>
+              <legend class="label">Product type</legend>
+              <div class="inline-flex rounded-full bg-charcoal-800/5 p-1">
+                @for (t of types; track t.value) {
+                  <label class="cursor-pointer rounded-full px-4 py-1.5 text-sm font-semibold transition has-[:checked]:bg-white has-[:checked]:shadow-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ember-400">
+                    <input type="radio" class="sr-only" formControlName="productType" [value]="t.value" /> {{ t.label }}
+                  </label>
+                }
+              </div>
+            </fieldset>
+            <div>
+              <label class="label" for="pe-price">Base price *</label>
+              <input id="pe-price" class="input" type="number" step="0.01" min="0" formControlName="basePrice" />
+              @if (err('basePrice', 'Price'); as e) { <p class="field-error">{{ e }}</p> }
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+              <div>
+                <label class="label" for="pe-prep">Prep (min)</label>
+                <input id="pe-prep" class="input" type="number" min="0" max="240" formControlName="prepMinutes" />
+                @if (err('prepMinutes', 'Prep time'); as e) { <p class="field-error">{{ e }}</p> }
+              </div>
+              <div>
+                <label class="label" for="pe-cal">Calories</label>
+                <input id="pe-cal" class="input" type="number" min="0" formControlName="calories" />
+                @if (err('calories', 'Calories'); as e) { <p class="field-error">{{ e }}</p> }
+              </div>
+              <div>
+                <label class="label" for="pe-sort">Sort</label>
+                <input id="pe-sort" class="input" type="number" formControlName="sortOrder" />
+              </div>
+            </div>
+          </div>
+          <div>
+            <label class="label" for="pe-desc">Description</label>
+            <textarea id="pe-desc" class="input min-h-20" formControlName="description"></textarea>
+            @if (err('description', 'Description'); as e) { <p class="field-error">{{ e }}</p> }
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="label" for="pe-ing">Ingredients</label>
+              <textarea id="pe-ing" class="input min-h-20" formControlName="ingredients"></textarea>
+              @if (err('ingredients', 'Ingredients'); as e) { <p class="field-error">{{ e }}</p> }
+            </div>
+            <div>
+              <label class="label" for="pe-all">Allergens</label>
+              <textarea id="pe-all" class="input min-h-20" formControlName="allergens" placeholder="e.g. gluten, dairy, egg"></textarea>
+              @if (err('allergens', 'Allergens'); as e) { <p class="field-error">{{ e }}</p> }
+            </div>
+          </div>
+        </section>
+
+        <!-- variants -->
+        <section class="admin-card p-5" aria-labelledby="var-h">
+          <h2 id="var-h" class="text-base font-bold">Sizes &amp; variants</h2>
+          <p class="mb-4 text-xs text-charcoal-500">Price change is added to the base price. Exactly one variant should be the default.</p>
+          <app-variants-editor [variants]="form.controls.variants" />
+        </section>
+
+        <!-- option groups -->
+        <section class="admin-card p-5" aria-labelledby="grp-h">
+          <h2 id="grp-h" class="text-base font-bold">Option groups</h2>
+          <p class="mb-4 text-xs text-charcoal-500">Customisations shown to the customer, in this order.</p>
+          @if (groups.error()) {
+            <app-error-state [message]="groups.error()!" (retry)="groups.reload()" />
+          } @else {
+            <app-groups-picker [control]="form.controls.customizationGroupIds" [groups]="groups.data() ?? []" />
+          }
+        </section>
+
+        <!-- combo -->
+        @if (isCombo()) {
+          <section class="admin-card p-5" aria-labelledby="combo-h">
+            <h2 id="combo-h" class="text-base font-bold">Combo components</h2>
+            <p class="mb-4 text-xs text-charcoal-500">What the customer picks inside the meal deal. Extra price is added on top of the combo price.</p>
+            <app-combo-editor [components]="form.controls.comboComponents" [products]="standardProducts()" />
+          </section>
+        }
+      </div>
+
+      <div class="space-y-4">
+        <!-- flags -->
+        <section class="admin-card p-5" aria-labelledby="flags-h">
+          <h2 id="flags-h" class="mb-3 text-base font-bold">Status &amp; labels</h2>
+          <div class="grid grid-cols-2 gap-2">
+            @for (f of flags; track f.key) {
+              <label class="flex cursor-pointer items-center gap-2 rounded-xl border border-charcoal-800/10 px-3 py-2.5 text-sm has-[:checked]:border-tomato-300 has-[:checked]:bg-tomato-50/60">
+                <input type="checkbox" class="h-4 w-4 accent-tomato-500" [formControlName]="f.key" /> {{ f.label }}
+              </label>
+            }
+          </div>
+        </section>
+
+        <!-- images -->
+        <section class="admin-card space-y-4 p-5" aria-labelledby="img-h">
+          <h2 id="img-h" class="text-base font-bold">Images</h2>
+          <div class="aspect-[4/3] overflow-hidden rounded-xl bg-charcoal-800/5">
+            @if (imageUrl() && !imgBroken()) {
+              <img [src]="imageUrl()" alt="Main image preview" class="h-full w-full object-cover" (error)="imgBroken.set(true)" />
+            } @else {
+              <div class="grid h-full place-items-center text-center text-sm text-charcoal-400">
+                <span><span class="mb-1 flex justify-center" aria-hidden="true"><lucide-icon name="image" [size]="28" /></span>{{ imgBroken() ? 'Image could not be loaded' : 'No image yet' }}</span>
+              </div>
+            }
+          </div>
+          <div>
+            <label class="label" for="pe-img">Main image URL</label>
+            <input id="pe-img" class="input" formControlName="imageUrl" placeholder="https://… or upload" />
+            @if (err('imageUrl', 'Image URL'); as e) { <p class="field-error">{{ e }}</p> }
+            <div class="mt-2"><app-image-upload-button label="Upload main image" (uploaded)="setMainImage($event)" /></div>
+          </div>
+
+          <div>
+            <p class="label">Gallery</p>
+            <div class="space-y-2" formArrayName="galleryImages">
+              @for (g of form.controls.galleryImages.controls; track g; let i = $index) {
+                <div class="flex items-center gap-2">
+                  <img [src]="g.value" alt="" class="h-10 w-10 shrink-0 rounded-lg bg-charcoal-800/5 object-cover" />
+                  <label class="sr-only" [for]="'pe-gal-' + i">Gallery image {{ i + 1 }} URL</label>
+                  <input [id]="'pe-gal-' + i" class="input" [formControlName]="i" placeholder="https://…" />
+                  <button type="button" class="btn-ghost btn-sm !px-2 text-tomato-600" (click)="removeGallery(i)" [attr.aria-label]="'Remove gallery image ' + (i + 1)"><lucide-icon name="x" [size]="14" /></button>
+                </div>
+              }
+            </div>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <button type="button" class="btn-ghost btn-sm" (click)="addGallery('')"><lucide-icon name="plus" [size]="14" /> Add URL</button>
+              <app-image-upload-button label="Upload to gallery" (uploaded)="addGallery($event)" />
+            </div>
+          </div>
+        </section>
+
+        @if (isEdit()) {
+          <section class="admin-card p-5">
+            <h2 class="mb-2 text-base font-bold text-tomato-700">Danger zone</h2>
+            <button type="button" class="btn-danger btn-sm" (click)="remove()"><lucide-icon name="trash-2" [size]="14" /> Delete product</button>
+          </section>
+        }
+      </div>
+    </div>
+  </form>
+}

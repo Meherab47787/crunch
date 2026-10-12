@@ -1,0 +1,10 @@
+<div class="flex flex-col items-center px-6 py-14 text-center animate-fade-up">
+  <div class="mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-ember-100 text-ember-600">
+    <lucide-icon [name]="icon()" [size]="30" />
+  </div>
+  <h3 class="text-xl font-bold text-charcoal-800">{{ title() }}</h3>
+  @if (text()) {
+    <p class="mt-1.5 max-w-sm text-sm text-charcoal-500">{{ text() }}</p>
+  }
+  <div class="mt-5"><ng-content /></div>
+</div>

@@ -1,0 +1,127 @@
+<a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2">Skip to content</a>
+
+<!-- promo ribbon -->
+<div class="bg-charcoal-800 text-cream-100 no-print">
+  <div class="container-page flex items-center justify-center gap-2 py-2 text-xs font-medium sm:text-sm">
+    <lucide-icon name="bike" [size]="15" class="text-ember-300" />
+    <span>Free delivery over {{ settings.settings()?.freeDeliveryThreshold ?? 35 | money }} · Use code <b class="text-ember-300">WELCOME10</b> for 10% off your first order</span>
+  </div>
+</div>
+
+<header class="sticky top-0 z-50 border-b border-charcoal-800/5 bg-cream-100/85 backdrop-blur-md no-print">
+  <div class="container-page flex h-16 items-center gap-4 sm:h-20">
+    <a routerLink="/" aria-label="Crust & Crunch home"><app-logo /></a>
+
+    <nav class="ml-6 hidden items-center gap-1 lg:flex" aria-label="Main">
+      @for (l of links; track l.path) {
+        <a [routerLink]="l.path" routerLinkActive="!text-tomato-600 bg-tomato-50" [routerLinkActiveOptions]="{ exact: l.exact }"
+           class="rounded-full px-4 py-2 text-sm font-semibold text-charcoal-600 transition hover:text-charcoal-900">{{ l.label }}</a>
+      }
+    </nav>
+
+    <div class="ml-auto flex items-center gap-1.5 sm:gap-2">
+      <a routerLink="/menu" [queryParams]="{ focus: 'search' }" class="btn-ghost rounded-full p-2.5" aria-label="Search the menu">
+        <lucide-icon name="search" [size]="20" />
+      </a>
+      @if (auth.isLoggedIn()) {
+        @if (auth.isStaff()) {
+          <a [routerLink]="auth.isAdmin() ? '/admin' : '/kitchen'" class="btn-ghost hidden rounded-full sm:inline-flex">
+            <lucide-icon [name]="auth.isAdmin() ? 'layout-dashboard' : 'chef-hat'" [size]="18" /> {{ auth.isAdmin() ? 'Admin' : 'Kitchen' }}
+          </a>
+        }
+        <a routerLink="/account" class="btn-ghost hidden rounded-full sm:inline-flex" aria-label="My account">
+          <lucide-icon name="user" [size]="18" /> {{ firstName() }}
+        </a>
+      } @else {
+        <a routerLink="/login" class="btn-ghost hidden rounded-full sm:inline-flex">Sign in</a>
+      }
+      <button type="button" class="btn-primary relative !px-4" (click)="cart.drawerOpen.set(true)"
+              [attr.aria-label]="'Open bag, ' + cart.itemCount() + ' items'">
+        <lucide-icon name="shopping-bag" [size]="18" />
+        <span class="hidden sm:inline">Bag</span>
+        @if (cart.itemCount() > 0) {
+          <span class="absolute -right-1.5 -top-1.5 grid h-6 min-w-6 place-items-center rounded-full bg-ember-300 px-1.5 text-xs font-extrabold text-charcoal-900 ring-2 ring-cream-100 animate-pop">
+            {{ cart.itemCount() }}
+          </span>
+        }
+      </button>
+      <button type="button" class="btn-ghost rounded-full p-2.5 lg:hidden" (click)="mobileOpen.set(!mobileOpen())"
+              [attr.aria-expanded]="mobileOpen()" aria-controls="mobile-nav" aria-label="Menu">
+        <lucide-icon [name]="mobileOpen() ? 'x' : 'menu'" [size]="22" />
+      </button>
+    </div>
+  </div>
+
+  @if (mobileOpen()) {
+    <nav id="mobile-nav" class="border-t border-charcoal-800/10 bg-cream-50 lg:hidden animate-fade-up" aria-label="Mobile">
+      <div class="container-page grid gap-1 py-3">
+        @for (l of links; track l.path) {
+          <a [routerLink]="l.path" class="rounded-xl px-3 py-3 font-semibold hover:bg-white">{{ l.label }}</a>
+        }
+        <div class="my-2 h-px bg-charcoal-800/10"></div>
+        @for (c of categories() ?? []; track c.id) {
+          <a [routerLink]="['/menu', c.slug]" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm hover:bg-white">
+            <lucide-icon [name]="c.icon ?? 'utensils'" [size]="16" class="text-tomato-500" /> {{ c.name }}
+          </a>
+        }
+        <div class="my-2 h-px bg-charcoal-800/10"></div>
+        @if (auth.isLoggedIn()) {
+          @if (auth.isStaff()) {
+            <a [routerLink]="auth.isAdmin() ? '/admin' : '/kitchen'" class="rounded-xl px-3 py-3 font-semibold hover:bg-white">{{ auth.isAdmin() ? 'Admin dashboard' : 'Kitchen display' }}</a>
+          }
+          <a routerLink="/account" class="rounded-xl px-3 py-3 font-semibold hover:bg-white">My account</a>
+          <button type="button" class="rounded-xl px-3 py-3 text-left font-semibold text-tomato-600 hover:bg-white" (click)="auth.logout()">Sign out</button>
+        } @else {
+          <a routerLink="/login" class="rounded-xl px-3 py-3 font-semibold hover:bg-white">Sign in</a>
+          <a routerLink="/register" class="rounded-xl px-3 py-3 font-semibold hover:bg-white">Create account</a>
+        }
+      </div>
+    </nav>
+  }
+</header>
+
+<main id="main" class="min-h-[60vh]">
+  <router-outlet />
+</main>
+
+<footer class="mt-20 bg-charcoal-800 text-cream-200 no-print">
+  <div class="container-page grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
+    <div>
+      <app-logo [inverse]="true" />
+      <p class="mt-4 max-w-xs text-sm text-cream-200/70">{{ settings.settings()?.tagline ?? 'Stone-baked pizza, smashed burgers & crispy chicken' }}. Made fresh, made fast, made to order.</p>
+    </div>
+    <div>
+      <h3 class="mb-3 font-display text-sm font-bold uppercase tracking-widest text-ember-300">Visit us</h3>
+      <ul class="space-y-2 text-sm">
+        <li class="flex gap-2"><lucide-icon name="map-pin" [size]="16" class="mt-0.5 shrink-0 text-ember-300" /> {{ settings.settings()?.address }}</li>
+        <li class="flex gap-2"><lucide-icon name="phone" [size]="16" class="mt-0.5 shrink-0 text-ember-300" /> <a [href]="'tel:' + (settings.settings()?.phone ?? '')" class="hover:underline">{{ settings.settings()?.phone }}</a></li>
+        <li class="flex gap-2"><lucide-icon name="mail" [size]="16" class="mt-0.5 shrink-0 text-ember-300" /> <a [href]="'mailto:' + (settings.settings()?.email ?? '')" class="hover:underline">{{ settings.settings()?.email }}</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3 class="mb-3 font-display text-sm font-bold uppercase tracking-widest text-ember-300">Opening hours</h3>
+      <ul class="space-y-2 text-sm">
+        @for (h of settings.settings()?.hours ?? []; track h.days) {
+          <li class="flex justify-between gap-4"><span>{{ h.days }}</span><span class="tabular-nums text-cream-200/80">{{ h.open }} – {{ h.close }}</span></li>
+        }
+      </ul>
+    </div>
+    <div>
+      <h3 class="mb-3 font-display text-sm font-bold uppercase tracking-widest text-ember-300">Explore</h3>
+      <ul class="grid grid-cols-2 gap-2 text-sm sm:grid-cols-1">
+        <li><a routerLink="/menu" class="hover:text-white">Full menu</a></li>
+        <li><a routerLink="/menu/combos" class="hover:text-white">Meal deals</a></li>
+        <li><a routerLink="/track" class="hover:text-white">Track an order</a></li>
+        <li><a routerLink="/account" class="hover:text-white">My account</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-cream-100/10">
+    <div class="container-page flex flex-col items-center justify-between gap-2 py-5 text-xs text-cream-200/50 sm:flex-row">
+      <span>© {{ year }} Crust &amp; Crunch. All rights reserved.</span>
+      <span>Allergen info available on every item. Ask us anything.</span>
+    </div>
+  </div>
+</footer>
+
+<app-cart-drawer />

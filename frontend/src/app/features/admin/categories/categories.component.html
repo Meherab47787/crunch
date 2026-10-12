@@ -1,0 +1,53 @@
+<app-admin-page-header title="Categories" subtitle="Menu sections, in display order">
+  <button type="button" class="btn-primary btn-sm" (click)="openEditor(null)"><lucide-icon name="plus" [size]="14" /> New category</button>
+</app-admin-page-header>
+
+<section class="admin-card overflow-hidden" aria-label="Categories">
+  @if (categories.error() && !categories.data()) {
+    <div class="p-4"><app-error-state [message]="categories.error()!" (retry)="categories.reload()" /></div>
+  } @else if (!categories.data()) {
+    <app-table-skeleton [rows]="6" [cols]="5" />
+  } @else if (categories.data()!.length === 0) {
+    <app-empty-state icon="grid-2x2" title="No categories yet" text="Create your first menu section.">
+      <button type="button" class="btn-primary btn-sm" (click)="openEditor(null)">New category</button>
+    </app-empty-state>
+  } @else {
+    <div class="overflow-x-auto">
+      <table class="table-base">
+        <thead><tr><th scope="col">Category</th><th scope="col" class="hidden md:table-cell">Slug</th><th scope="col" class="text-right">Products</th><th scope="col" class="text-right">Sort</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+        <tbody>
+          @for (c of categories.data(); track c.id) {
+            <tr class="hover:bg-charcoal-800/[0.02]">
+              <td>
+                <div class="flex min-w-[12rem] items-center gap-3">
+                  @if (c.imageUrl) { <img [src]="c.imageUrl" alt="" class="h-11 w-11 shrink-0 rounded-xl object-cover" loading="lazy" /> }
+                  @else { <span class="h-11 w-11 shrink-0 rounded-xl bg-charcoal-800/5"></span> }
+                  <div class="min-w-0">
+                    <p class="flex items-center gap-1.5 font-semibold text-charcoal-900">
+                      @if (icons.has(c.icon)) { <lucide-icon [name]="c.icon!" [size]="15" class="text-tomato-500" /> } {{ c.name }}
+                    </p>
+                    @if (c.description) { <p class="max-w-sm truncate text-xs text-charcoal-500">{{ c.description }}</p> }
+                  </div>
+                </div>
+              </td>
+              <td class="hidden font-mono text-xs text-charcoal-500 md:table-cell">{{ c.slug }}</td>
+              <td class="text-right tabular-nums"><a routerLink="/admin/products" [queryParams]="{ category: c.slug }" class="hover:underline" [attr.aria-label]="'View ' + c.productCount + ' products in ' + c.name">{{ c.productCount }}</a></td>
+              <td class="text-right tabular-nums text-charcoal-500">{{ c.sortOrder }}</td>
+              <td>
+                <span class="chip" [class]="c.active ? 'chip bg-basil-500/10 text-basil-600' : 'chip bg-charcoal-800/10 text-charcoal-500'">{{ c.active ? 'Active' : 'Hidden' }}</span>
+              </td>
+              <td class="whitespace-nowrap text-right">
+                <button type="button" class="btn-ghost btn-sm !px-2" (click)="openEditor(c)" [attr.aria-label]="'Edit ' + c.name"><lucide-icon name="pencil" [size]="15" /></button>
+                <button type="button" class="btn-ghost btn-sm !px-2 text-tomato-600" (click)="remove(c)" [attr.aria-label]="'Delete ' + c.name"><lucide-icon name="trash-2" [size]="15" /></button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
+
+@if (editing(); as e) {
+  <app-category-form-modal [category]="e.category" (closed)="editing.set(null)" (saved)="onSaved()" />
+}

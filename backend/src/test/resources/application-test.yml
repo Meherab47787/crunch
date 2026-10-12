@@ -1,0 +1,21 @@
+# Test profile. The datasource is supplied by Testcontainers via @ServiceConnection.
+app:
+  jwt:
+    secret: test-only-jwt-secret-that-is-definitely-longer-than-32-bytes
+    expiration-minutes: 60
+  bootstrap:
+    admin-email: admin@test.local
+    admin-password: AdminPass123!
+    admin-name: Test Admin
+    kitchen-email: kitchen@test.local
+    kitchen-password: KitchenPass123!
+    demo-data: false
+  uploads:
+    dir: target/test-uploads
+  payments:
+    simulated: true
+
+logging:
+  level:
+    root: WARN
+    com.crustcrunch: INFO

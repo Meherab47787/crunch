@@ -1,0 +1,8 @@
+<span class="inline-flex flex-wrap items-center gap-1.5">
+  @if (vegetarian()) {
+    <span class="chip bg-basil-500/10 text-basil-600" title="Vegetarian"><lucide-icon name="leaf" [size]="11" /> Veg</span>
+  }
+  @if (spicy()) {
+    <span class="chip bg-tomato-100 text-tomato-700" title="Spicy"><lucide-icon name="flame" [size]="11" /> Spicy</span>
+  }
+</span>

@@ -1,0 +1,7 @@
+/* Print: kitchen tickets & receipts. Mark screen-only UI with .no-print and print-only markup with .print-only. */
+@media print {
+  html, body { background: white !important; }
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+}
+.print-only { display: none; }

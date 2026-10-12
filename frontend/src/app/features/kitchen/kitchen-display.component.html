@@ -1,0 +1,86 @@
+<div class="no-print flex min-h-screen flex-col bg-charcoal-900 text-cream-100 [color-scheme:dark] xl:h-screen">
+  <!-- new-order flash -->
+  @if (flash()) {
+    <div class="pointer-events-none fixed inset-0 z-50 animate-pulse border-[10px] border-ember-400" aria-hidden="true"></div>
+  }
+  <div class="sr-only" aria-live="assertive">{{ announcement() }}</div>
+
+  <!-- header -->
+  <header class="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-white/10 bg-charcoal-900 px-4 py-3 sm:px-6">
+    <div class="flex items-center gap-3">
+      <app-logo [inverse]="true" [tagline]="false" />
+      <span class="hidden rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-ember-300 sm:inline">Kitchen</span>
+    </div>
+    <p class="font-display text-3xl font-extrabold tabular-nums text-white" aria-label="Current time">{{ now() | date: 'h:mm:ss a' }}</p>
+
+    <div class="flex items-center gap-2 text-sm">
+      <span class="h-2.5 w-2.5 rounded-full" [class]="error() ? 'h-2.5 w-2.5 rounded-full bg-tomato-500' : 'h-2.5 w-2.5 rounded-full bg-basil-500'" aria-hidden="true"></span>
+      <span class="text-cream-200/70" aria-live="polite">
+        @if (error()) { Connection problem · }
+        @if (lastUpdated(); as lu) { Updated {{ agoText() }} } @else { Loading… }
+      </span>
+      <button type="button" class="ml-1 inline-flex h-10 items-center gap-2 rounded-full bg-white/10 px-4 font-semibold hover:bg-white/20 disabled:opacity-50"
+              (click)="refresh()" [disabled]="fetching()" aria-label="Refresh orders now">
+        <span class="inline-flex" [class.animate-spin]="fetching()"><lucide-icon name="refresh-cw" [size]="16" /></span> <span class="hidden sm:inline">Refresh</span>
+      </button>
+    </div>
+
+    <div class="ml-auto flex items-center gap-2">
+      @if (auth.isAdmin()) {
+        <a routerLink="/admin" class="inline-flex h-10 items-center gap-2 rounded-full bg-white/10 px-4 text-sm font-semibold hover:bg-white/20">
+          <lucide-icon name="layout-dashboard" [size]="16" /> <span class="hidden md:inline">Admin</span>
+        </a>
+      }
+      <span class="hidden items-center gap-2 text-sm text-cream-200/80 lg:inline-flex"><lucide-icon name="user" [size]="16" /> {{ auth.user()?.fullName }}</span>
+      <button type="button" class="inline-flex h-10 items-center gap-2 rounded-full bg-white/10 px-4 text-sm font-semibold hover:bg-white/20" (click)="auth.logout()">
+        <lucide-icon name="log-out" [size]="16" /> <span class="hidden sm:inline">Sign out</span>
+      </button>
+    </div>
+  </header>
+
+  @if (newBanner(); as n) {
+    <div class="flex items-center justify-center gap-2 bg-ember-400 px-4 py-2 text-center font-display text-lg font-extrabold text-charcoal-900 animate-fade-up" role="status">
+      <lucide-icon name="sparkles" [size]="20" /> {{ n }} new {{ n === 1 ? 'order' : 'orders' }}!
+    </div>
+  }
+
+  <!-- body -->
+  @if (error() && orders() === null) {
+    <div class="grid flex-1 place-items-center p-6">
+      <div role="alert" class="max-w-md rounded-3xl border border-tomato-500/50 bg-tomato-900/30 p-8 text-center">
+        <span class="mb-3 flex justify-center text-tomato-400" aria-hidden="true"><lucide-icon name="triangle-alert" [size]="36" /></span>
+        <p class="text-lg font-semibold">{{ error() }}</p>
+        <button type="button" class="mt-5 inline-flex h-12 items-center gap-2 rounded-full bg-white px-6 font-bold text-charcoal-900" (click)="refresh()">
+          <lucide-icon name="refresh-cw" [size]="18" /> Try again
+        </button>
+      </div>
+    </div>
+  } @else {
+    <main class="grid flex-1 gap-4 p-4 md:grid-cols-2 xl:min-h-0 xl:grid-cols-4 sm:p-6" aria-label="Order board">
+      @for (col of columns; track col.status) {
+        <section class="flex min-h-0 flex-col rounded-3xl bg-white/[0.04]" [attr.aria-labelledby]="'col-' + col.status">
+          <h2 [id]="'col-' + col.status" class="flex items-center justify-between gap-2 px-4 pb-2 pt-4 font-display text-lg font-extrabold uppercase tracking-wider">
+            <span class="flex items-center gap-2"><span class="h-3 w-3 rounded-full" [class]="'h-3 w-3 rounded-full ' + col.accent"></span>{{ col.title }}</span>
+            <span class="grid h-8 min-w-8 place-items-center rounded-full bg-white/10 px-2 text-base tabular-nums">{{ byStatus()[col.status].length }}</span>
+          </h2>
+          <div class="flex-1 space-y-4 overflow-y-auto px-3 pb-4 xl:min-h-0">
+            @if (orders() === null) {
+              @for (i of [0, 1]; track i) { <div class="h-56 animate-pulse rounded-2xl bg-white/[0.06]"></div> }
+            } @else {
+              @for (o of byStatus()[col.status]; track o.id) {
+                <app-kitchen-ticket-card [order]="o" [now]="now()" [pending]="pending().has(o.id)" [isNew]="newIds().has(o.id)"
+                                         (advance)="advance($event)" (back)="back($event)" (print)="print($event)" />
+              } @empty {
+                <p class="rounded-2xl border-2 border-dashed border-white/10 px-4 py-10 text-center text-cream-200/50">No {{ col.title.toLowerCase() }} orders</p>
+              }
+            }
+          </div>
+        </section>
+      }
+    </main>
+  }
+</div>
+
+@if (printOrder(); as po) {
+  <div class="print-only"><app-kitchen-ticket-print [order]="po" /></div>
+}

@@ -1,0 +1,80 @@
+<app-modal [title]="coupon() ? 'Edit coupon' : 'New coupon'" size="lg" (closed)="closed.emit()">
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate class="space-y-4">
+    @if (formError()) { <div role="alert" class="rounded-xl bg-tomato-50 p-3 text-sm text-tomato-800">{{ formError() }}</div> }
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label class="label" for="cp-code">Code *</label>
+        <input id="cp-code" class="input font-mono uppercase" formControlName="code" placeholder="SUMMER20" autocomplete="off" />
+        @if (err(form.controls.code, 'Code'); as e) { <p class="field-error">{{ e === 'Code has an invalid format.' ? 'Use letters, digits, - and _ only.' : e }}</p> }
+      </div>
+      <div>
+        <label class="label" for="cp-desc">Description</label>
+        <input id="cp-desc" class="input" formControlName="description" />
+        @if (err(form.controls.description, 'Description'); as e) { <p class="field-error">{{ e }}</p> }
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div>
+        <label class="label" for="cp-type">Type</label>
+        <select id="cp-type" class="input" formControlName="discountType">
+          <option value="PERCENT">Percent</option><option value="FIXED">Fixed amount</option>
+        </select>
+      </div>
+      <div>
+        <label class="label" for="cp-val">{{ form.controls.discountType.value === 'PERCENT' ? 'Percent off *' : 'Amount off *' }}</label>
+        <input id="cp-val" class="input" type="number" step="0.01" min="0.01" formControlName="discountValue" />
+        @if (err(form.controls.discountValue, 'Value'); as e) { <p class="field-error">{{ e }}</p> }
+      </div>
+      <div>
+        <label class="label" for="cp-min">Min order</label>
+        <input id="cp-min" class="input" type="number" step="0.01" min="0" formControlName="minOrderAmount" />
+        @if (err(form.controls.minOrderAmount, 'Min order'); as e) { <p class="field-error">{{ e }}</p> }
+      </div>
+      <div>
+        <label class="label" for="cp-maxd">Max discount</label>
+        <input id="cp-maxd" class="input" type="number" step="0.01" min="0.01" formControlName="maxDiscountAmount" placeholder="No cap" />
+        @if (err(form.controls.maxDiscountAmount, 'Max discount'); as e) { <p class="field-error">{{ e }}</p> }
+      </div>
+    </div>
+    <div>
+      <label class="label" for="cp-cat">Limit to category</label>
+      <select id="cp-cat" class="input" formControlName="categoryId">
+        <option [ngValue]="null">Whole order</option>
+        @for (c of categories(); track c.id) { <option [ngValue]="c.id">{{ c.name }}</option> }
+      </select>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label class="label" for="cp-start">Starts</label>
+        <input id="cp-start" class="input" type="datetime-local" formControlName="startsAt" />
+      </div>
+      <div>
+        <label class="label" for="cp-exp">Expires</label>
+        <input id="cp-exp" class="input" type="datetime-local" formControlName="expiresAt" />
+        @if (err(form.controls.expiresAt, 'Expiry'); as e) { <p class="field-error">{{ e }}</p> }
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <div>
+        <label class="label" for="cp-maxr">Max redemptions</label>
+        <input id="cp-maxr" class="input" type="number" min="1" formControlName="maxRedemptions" placeholder="Unlimited" />
+        @if (err(form.controls.maxRedemptions, 'Max redemptions'); as e) { <p class="field-error">{{ e }}</p> }
+      </div>
+      <div>
+        <label class="label" for="cp-per">Per customer</label>
+        <input id="cp-per" class="input" type="number" min="1" formControlName="perUserLimit" placeholder="Unlimited" />
+        @if (err(form.controls.perUserLimit, 'Per-customer limit'); as e) { <p class="field-error">{{ e }}</p> }
+      </div>
+      <label class="col-span-2 flex items-center gap-2 self-end pb-2.5 text-sm font-semibold sm:col-span-1">
+        <input type="checkbox" class="h-4 w-4 accent-tomato-500" formControlName="active" /> Active
+      </label>
+    </div>
+    @if (coupon(); as c) { <p class="text-xs text-charcoal-500">Redeemed {{ c.redemptionCount }} time(s) so far.</p> }
+    <div class="flex justify-end gap-2 pt-2">
+      <button type="button" class="btn-outline" (click)="closed.emit()">Cancel</button>
+      <button type="submit" class="btn-primary" [disabled]="saving()">
+        @if (saving()) { <span class="inline-flex animate-spin" aria-hidden="true"><lucide-icon name="loader" [size]="16" /></span> } {{ coupon() ? 'Save' : 'Create' }}
+      </button>
+    </div>
+  </form>
+</app-modal>

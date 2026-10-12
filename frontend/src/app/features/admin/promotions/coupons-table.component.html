@@ -1,0 +1,40 @@
+<div class="overflow-x-auto">
+  <table class="table-base">
+    <thead><tr><th scope="col">Code</th><th scope="col">Discount</th><th scope="col" class="hidden md:table-cell">Conditions</th><th scope="col" class="hidden lg:table-cell">Valid</th><th scope="col" class="text-right">Redeemed</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+    <tbody>
+      @for (c of coupons(); track c.id) {
+        <tr class="hover:bg-charcoal-800/[0.02]">
+          <td>
+            <span class="rounded-lg bg-charcoal-800/5 px-2 py-1 font-mono text-sm font-bold">{{ c.code }}</span>
+            @if (c.description) { <p class="mt-1 max-w-xs truncate text-xs text-charcoal-500">{{ c.description }}</p> }
+          </td>
+          <td class="whitespace-nowrap font-semibold">{{ c.discountType === 'PERCENT' ? c.discountValue + '%' : (c.discountValue | money) }} off</td>
+          <td class="hidden text-xs text-charcoal-500 md:table-cell">
+            @if (c.minOrderAmount > 0) { Min {{ c.minOrderAmount | money }}<br /> }
+            @if (c.maxDiscountAmount) { Cap {{ c.maxDiscountAmount | money }}<br /> }
+            @if (c.categoryName) { {{ c.categoryName }} only<br /> }
+            @if (c.perUserLimit) { {{ c.perUserLimit }}× per customer }
+            @if (!c.minOrderAmount && !c.maxDiscountAmount && !c.categoryName && !c.perUserLimit) { — }
+          </td>
+          <td class="hidden whitespace-nowrap text-xs text-charcoal-500 lg:table-cell">
+            {{ c.startsAt ? (c.startsAt | date: 'MMM d, y') : 'Now' }} → {{ c.expiresAt ? (c.expiresAt | date: 'MMM d, y') : 'No expiry' }}
+          </td>
+          <td class="whitespace-nowrap text-right tabular-nums">{{ c.redemptionCount }}@if (c.maxRedemptions) { <span class="text-charcoal-400"> / {{ c.maxRedemptions }}</span> }</td>
+          <td>
+            @switch (state(c)) {
+              @case ('live') { <span class="chip bg-basil-500/10 text-basil-600">Live</span> }
+              @case ('scheduled') { <span class="chip bg-sky-100 text-sky-800">Scheduled</span> }
+              @case ('expired') { <span class="chip bg-charcoal-800/10 text-charcoal-500">Expired</span> }
+              @case ('used') { <span class="chip bg-charcoal-800/10 text-charcoal-500">Used up</span> }
+              @default { <span class="chip bg-charcoal-800/10 text-charcoal-500">Inactive</span> }
+            }
+          </td>
+          <td class="whitespace-nowrap text-right">
+            <button type="button" class="btn-ghost btn-sm !px-2" (click)="edit.emit(c)" [attr.aria-label]="'Edit coupon ' + c.code"><lucide-icon name="pencil" [size]="15" /></button>
+            <button type="button" class="btn-ghost btn-sm !px-2 text-tomato-600" (click)="remove.emit(c)" [attr.aria-label]="'Delete coupon ' + c.code"><lucide-icon name="trash-2" [size]="15" /></button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

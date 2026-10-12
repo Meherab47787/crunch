@@ -1,0 +1,21 @@
+@let q = cart.quote();
+@if (cart.couponCode()) {
+  <div class="flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-sm"
+       [class]="q?.couponApplied ? 'bg-basil-500/10 text-basil-600' : 'bg-tomato-50 text-tomato-700'">
+    <span class="flex items-center gap-2 font-semibold">
+      <lucide-icon name="ticket" [size]="16" /> {{ cart.couponCode() }}
+      @if (cart.quoteLoading()) { <lucide-icon name="loader" [size]="14" class="animate-spin" /> }
+    </span>
+    <button type="button" class="text-xs font-bold underline" (click)="cart.removeCoupon()">Remove</button>
+  </div>
+  @if (q?.couponMessage && !cart.quoteLoading()) {
+    <p class="mt-1.5 text-xs" [class]="q?.couponApplied ? 'text-basil-600' : 'text-tomato-600'" role="status">{{ q?.couponMessage }}</p>
+  }
+} @else {
+  <form class="flex gap-2" (ngSubmit)="apply()">
+    <label for="coupon" class="sr-only">Coupon code</label>
+    <input id="coupon" name="coupon" class="input uppercase" placeholder="Coupon code" autocomplete="off"
+           [(ngModel)]="code" maxlength="40" />
+    <button type="submit" class="btn-dark shrink-0" [disabled]="!code().trim()">Apply</button>
+  </form>
+}

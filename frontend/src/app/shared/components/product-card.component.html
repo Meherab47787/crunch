@@ -1,0 +1,61 @@
+@let p = product();
+<article class="group relative flex h-full flex-col overflow-hidden rounded-3xl bg-white shadow-card transition duration-300 hover:-translate-y-1 hover:shadow-lift"
+         [class.opacity-75]="!p.available">
+  <a [routerLink]="['/menu/item', p.slug]" class="relative block aspect-[4/3] overflow-hidden bg-cream-200" [attr.aria-label]="p.name">
+    @if (p.imageUrl) {
+      <img [src]="p.imageUrl" [alt]="p.name" loading="lazy" decoding="async"
+           class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+    }
+    <div class="absolute left-3 top-3 flex flex-wrap gap-1.5">
+      @if (!p.available) {
+        <span class="chip bg-charcoal-800 text-cream-100">Sold out</span>
+      } @else if (p.salePrice != null) {
+        <span class="chip bg-tomato-500 text-white shadow"><lucide-icon name="percent" [size]="11" /> Deal</span>
+      }
+      @if (p.newArrival) {
+        <span class="chip bg-ember-300 text-charcoal-900">New</span>
+      }
+      @if (p.bestseller && compact() === false) {
+        <span class="chip bg-white/90 text-charcoal-800 backdrop-blur"><lucide-icon name="flame" [size]="11" class="text-tomato-500" /> Bestseller</span>
+      }
+    </div>
+  </a>
+  <div class="flex flex-1 flex-col p-4 sm:p-5">
+    <div class="mb-1 flex items-start justify-between gap-2">
+      <h3 class="text-lg font-bold leading-snug text-charcoal-800">
+        <a [routerLink]="['/menu/item', p.slug]" class="hover:text-tomato-600 focus:outline-none">{{ p.name }}</a>
+      </h3>
+      <app-diet-badges [vegetarian]="p.vegetarian" [spicy]="p.spicy" class="shrink-0 pt-1" />
+    </div>
+    @if (!compact()) {
+      <p class="line-clamp-2 text-sm text-charcoal-500">{{ p.description }}</p>
+    }
+    @if (p.ratingCount > 0) {
+      <app-rating-stars class="mt-2" [rating]="p.ratingAvg" [count]="p.ratingCount" />
+    }
+    <div class="mt-auto flex items-end justify-between gap-3 pt-4">
+      <div class="leading-tight">
+        @if (p.customizable && hasRange()) {
+          <span class="block text-[11px] font-semibold uppercase tracking-wide text-charcoal-400">From</span>
+        }
+        @if (p.salePrice != null) {
+          <span class="text-lg font-extrabold text-tomato-600">{{ p.salePrice | money }}</span>
+          <span class="ml-1.5 text-sm text-charcoal-400 line-through">{{ p.fromPrice | money }}</span>
+        } @else {
+          <span class="text-lg font-extrabold text-charcoal-800">{{ p.fromPrice | money }}</span>
+        }
+      </div>
+      @if (!p.available) {
+        <span class="text-xs font-semibold text-charcoal-400">Back soon</span>
+      } @else if (p.customizable) {
+        <a [routerLink]="['/menu/item', p.slug]" class="btn-dark btn-sm" [attr.aria-label]="'Customize ' + p.name">
+          <lucide-icon name="sliders-horizontal" [size]="14" /> Customize
+        </a>
+      } @else {
+        <button type="button" class="btn-primary btn-sm" (click)="quickAdd()" [attr.aria-label]="'Add ' + p.name + ' to cart'">
+          <lucide-icon name="plus" [size]="15" /> Add
+        </button>
+      }
+    </div>
+  </div>
+</article>

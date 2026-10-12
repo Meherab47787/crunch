@@ -1,0 +1,128 @@
+<section class="border-b border-charcoal-800/5 bg-gradient-to-b from-ember-100/70 to-cream-100">
+  <div class="container-page pb-6 pt-10">
+    <p class="text-sm font-bold uppercase tracking-widest text-tomato-500">Our menu</p>
+    <h1 class="mt-1 text-4xl font-extrabold sm:text-5xl">{{ activeCategory()?.name ?? 'Everything we make' }}</h1>
+    <p class="mt-2 max-w-2xl text-charcoal-600">{{ activeCategory()?.description ?? 'Pizza, burgers, fried chicken and more — all made to order.' }}</p>
+
+    <!-- search -->
+    <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+      <label class="relative flex-1">
+        <span class="sr-only">Search the menu</span>
+        <lucide-icon name="search" [size]="18" class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-charcoal-400" />
+        <input #search type="search" class="input !rounded-full !py-3 !pl-11" placeholder="Search pizza, wings, milkshake…"
+               [ngModel]="filters().q" (ngModelChange)="onSearch($event)" />
+      </label>
+      <div class="flex gap-2">
+        <label class="sr-only" for="sort">Sort by</label>
+        <select id="sort" class="input !w-auto !rounded-full !py-3" [ngModel]="filters().sort" (ngModelChange)="patch({ sort: $event })">
+          @for (s of sorts; track s.value) { <option [value]="s.value">{{ s.label }}</option> }
+        </select>
+        <button type="button" class="btn-outline !py-3 lg:hidden" (click)="showFilters.set(!showFilters())" [attr.aria-expanded]="showFilters()">
+          <lucide-icon name="sliders-horizontal" [size]="16" /> Filters
+          @if (activeFilterCount()) { <span class="grid h-5 min-w-5 place-items-center rounded-full bg-tomato-500 px-1 text-[11px] text-white">{{ activeFilterCount() }}</span> }
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- category tabs -->
+  <nav class="container-page" aria-label="Categories">
+    <div class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-4 sm:mx-0 sm:px-0">
+      <a routerLink="/menu" [queryParamsHandling]="'preserve'"
+         class="inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition"
+         [class]="!category() ? 'bg-charcoal-800 text-cream-100' : 'bg-white text-charcoal-700 shadow-card hover:bg-cream-50'">
+        <lucide-icon name="grid-2x2" [size]="15" /> All
+      </a>
+      @for (c of categories() ?? []; track c.id) {
+        <a [routerLink]="['/menu', c.slug]" [queryParamsHandling]="'preserve'"
+           class="inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition"
+           [class]="category() === c.slug ? 'bg-tomato-500 text-white' : 'bg-white text-charcoal-700 shadow-card hover:bg-cream-50'"
+           [attr.aria-current]="category() === c.slug ? 'page' : null">
+          <lucide-icon [name]="c.icon ?? 'utensils'" [size]="15" /> {{ c.name }}
+        </a>
+      }
+    </div>
+  </nav>
+</section>
+
+<div class="container-page mt-8 grid gap-8 lg:grid-cols-[240px_1fr]">
+  <!-- filters -->
+  <aside class="lg:block" [class.hidden]="!showFilters()" aria-label="Filters">
+    <div class="card sticky top-24 space-y-6 p-5">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-bold">Filters</h2>
+        @if (activeFilterCount()) {
+          <button type="button" class="text-xs font-bold text-tomato-600 hover:underline" (click)="resetFilters()">Clear all</button>
+        }
+      </div>
+      <fieldset>
+        <legend class="label">Dietary</legend>
+        <label class="flex cursor-pointer items-center gap-2.5 py-1 text-sm">
+          <input type="checkbox" class="h-4 w-4 accent-tomato-500" [ngModel]="filters().vegetarian" (ngModelChange)="patch({ vegetarian: $event })" /> Vegetarian
+        </label>
+        <label class="flex cursor-pointer items-center gap-2.5 py-1 text-sm">
+          <input type="checkbox" class="h-4 w-4 accent-tomato-500" [ngModel]="filters().spicy === true" (ngModelChange)="patch({ spicy: $event ? true : null })" /> Spicy only
+        </label>
+        <label class="flex cursor-pointer items-center gap-2.5 py-1 text-sm">
+          <input type="checkbox" class="h-4 w-4 accent-tomato-500" [ngModel]="filters().spicy === false" (ngModelChange)="patch({ spicy: $event ? false : null })" /> Not spicy
+        </label>
+      </fieldset>
+      <fieldset>
+        <legend class="label">Free from</legend>
+        <div class="flex flex-wrap gap-1.5">
+          @for (a of allergens; track a) {
+            <button type="button" class="rounded-full border px-3 py-1 text-xs font-semibold transition"
+                    [class]="filters().allergenFree.includes(a) ? 'border-charcoal-800 bg-charcoal-800 text-cream-100' : 'border-charcoal-800/15 bg-white hover:border-charcoal-800/40'"
+                    [attr.aria-pressed]="filters().allergenFree.includes(a)" (click)="toggleAllergen(a)">{{ a }}</button>
+          }
+        </div>
+        <p class="mt-2 text-[11px] text-charcoal-400">Based on listed allergens. Tell us about allergies at checkout.</p>
+      </fieldset>
+      <fieldset>
+        <legend class="label">Max price</legend>
+        <div class="flex items-center gap-3">
+          <input type="range" min="2" max="35" step="1" class="w-full accent-tomato-500" [ngModel]="filters().maxPrice ?? 35"
+                 (ngModelChange)="patch({ maxPrice: +$event >= 35 ? null : +$event })" aria-label="Maximum price" />
+          <span class="w-12 text-right text-sm font-bold tabular-nums">{{ filters().maxPrice ? '$' + filters().maxPrice : 'Any' }}</span>
+        </div>
+      </fieldset>
+      <label class="flex cursor-pointer items-center justify-between gap-2 text-sm font-semibold">
+        Hide sold-out items
+        <input type="checkbox" class="h-4 w-4 accent-tomato-500" [ngModel]="filters().available" (ngModelChange)="patch({ available: $event })" />
+      </label>
+    </div>
+  </aside>
+
+  <!-- results -->
+  <section aria-live="polite" [attr.aria-busy]="loading()">
+    <div class="mb-4 flex items-center justify-between text-sm text-charcoal-500">
+      @if (!loading() || items().length) {
+        <span><b class="text-charcoal-800">{{ total() }}</b> {{ total() === 1 ? 'item' : 'items' }}@if (filters().q) { for “{{ filters().q }}” }</span>
+      } @else {
+        <span class="skeleton h-4 w-24"></span>
+      }
+    </div>
+
+    @if (error()) {
+      <app-error-state [message]="error()!" (retry)="load(true)" />
+    } @else if (!loading() && items().length === 0) {
+      <app-empty-state icon="search" title="Nothing matches that" text="Try a different search or loosen a filter.">
+        <button type="button" class="btn-primary" (click)="resetFilters(true)">Reset search &amp; filters</button>
+      </app-empty-state>
+    } @else {
+      <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        @for (p of items(); track p.id) {
+          <app-product-card [product]="p" class="animate-fade-up" />
+        }
+        @if (loading()) {
+          @for (i of skeletons; track i) { <app-product-card-skeleton /> }
+        }
+      </div>
+      @if (!loading() && hasMore()) {
+        <div class="mt-10 flex justify-center">
+          <button type="button" class="btn-outline btn-lg" (click)="loadMore()">Show more</button>
+        </div>
+      }
+    }
+  </section>
+</div>

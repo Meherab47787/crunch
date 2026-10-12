@@ -1,0 +1,4 @@
+/* Page-width container used by every storefront section. */
+@utility container-page {
+  @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+}

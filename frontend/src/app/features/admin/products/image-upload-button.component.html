@@ -1,0 +1,5 @@
+<label class="btn-outline btn-sm cursor-pointer focus-within:ring-4 focus-within:ring-tomato-100" [class.opacity-60]="busy()">
+  @if (busy()) { <span class="inline-flex animate-spin" aria-hidden="true"><lucide-icon name="loader" [size]="14" /></span> Uploading… }
+  @else { <lucide-icon name="upload" [size]="14" /> {{ label() }} }
+  <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="sr-only" [disabled]="busy()" (change)="onFile($event)" />
+</label>

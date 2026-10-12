@@ -1,0 +1,21 @@
+/*
+ * Global styles entry point. Component-specific styling lives next to each component
+ * (*.component.css); only shared design-system pieces belong here:
+ *
+ *   theme      design tokens: colours, fonts, shadows, animations (Tailwind @theme)
+ *   base       element defaults and accessibility rules
+ *   layout     page container
+ *   buttons    .btn and its variants
+ *   forms      .input, .label, .field-error
+ *   surfaces   .card, .chip, .skeleton, admin tables
+ *   print      receipt / kitchen-ticket print rules
+ */
+@import "tailwindcss";
+
+@import "./styles/theme.css";
+@import "./styles/base.css";
+@import "./styles/layout.css";
+@import "./styles/buttons.css";
+@import "./styles/forms.css";
+@import "./styles/surfaces.css";
+@import "./styles/print.css";

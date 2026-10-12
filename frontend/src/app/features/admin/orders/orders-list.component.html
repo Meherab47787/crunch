@@ -1,0 +1,107 @@
+<app-admin-page-header title="Orders" [subtitle]="orders.data() ? orders.data()!.totalElements + ' matching orders' : 'Search and manage every order'">
+  <button type="button" class="btn-outline btn-sm" (click)="orders.reload()" [disabled]="orders.loading()">
+    <span class="inline-flex" [class.animate-spin]="orders.loading()"><lucide-icon name="refresh-cw" [size]="14" /></span> Refresh
+  </button>
+</app-admin-page-header>
+
+<!-- filters: one row above the table -->
+<form id="order-filters-more" class="admin-card mb-4 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8" role="search" (submit)="$event.preventDefault(); applySearch()">
+  <div class="sm:col-span-2 xl:col-span-2">
+    <div class="flex items-center justify-between">
+      <label class="label" for="o-q">Search</label>
+      <button type="button" class="btn-ghost btn-sm -mt-1 mb-1 sm:hidden" (click)="filtersOpen.set(!filtersOpen())"
+              [attr.aria-expanded]="filtersOpen()" aria-controls="order-filters-more">
+        <lucide-icon name="sliders-horizontal" [size]="14" /> Filters @if (activeFilterCount()) { ({{ activeFilterCount() }}) }
+      </button>
+    </div>
+    <div class="relative">
+      <span class="inline-flex pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" aria-hidden="true"><lucide-icon name="search" [size]="16" /></span>
+      <input id="o-q" type="search" class="input !pl-9" placeholder="Order #, name, email, phone" [value]="searchText()"
+             (input)="onSearchInput($any($event.target).value)" />
+    </div>
+  </div>
+  <div [class]="filterCls()">
+    <label class="label" for="o-status">Status</label>
+    <select id="o-status" class="input" [value]="query().status ?? ''" (change)="setParam('status', $any($event.target).value)">
+      <option value="">All statuses</option>
+      @for (s of statuses; track s) { <option [value]="s">{{ statusLabel[s] }}</option> }
+    </select>
+  </div>
+  <div [class]="filterCls()">
+    <label class="label" for="o-ful">Fulfillment</label>
+    <select id="o-ful" class="input" [value]="query().fulfillmentType ?? ''" (change)="setParam('fulfillment', $any($event.target).value)">
+      <option value="">All</option><option value="DELIVERY">Delivery</option><option value="PICKUP">Pickup</option>
+    </select>
+  </div>
+  <div [class]="filterCls()">
+    <label class="label" for="o-pay">Payment</label>
+    <select id="o-pay" class="input" [value]="query().paymentMethod ?? ''" (change)="setParam('payment', $any($event.target).value)">
+      <option value="">All</option><option value="CASH">Cash</option><option value="ONLINE">Online</option>
+    </select>
+  </div>
+  <div [class]="filterCls()">
+    <label class="label" for="o-cat">Category</label>
+    <select id="o-cat" class="input" [value]="query().category ?? ''" (change)="setParam('category', $any($event.target).value)">
+      <option value="">All</option>
+      @for (c of categories.data() ?? []; track c.id) { <option [value]="c.name">{{ c.name }}</option> }
+    </select>
+  </div>
+  <div [class]="filterCls()">
+    <label class="label" for="o-from">From</label>
+    <input id="o-from" type="date" class="input" [value]="params()['from'] ?? ''" [max]="params()['to'] ?? null" (change)="setParam('from', $any($event.target).value)" />
+  </div>
+  <div [class]="filterCls()">
+    <label class="label" for="o-to">To</label>
+    <input id="o-to" type="date" class="input" [value]="params()['to'] ?? ''" [min]="params()['from'] ?? null" (change)="setParam('to', $any($event.target).value)" />
+  </div>
+  @if (hasFilters()) {
+    <div class="flex items-end sm:col-span-2 lg:col-span-4 xl:col-span-8">
+      <button type="button" class="btn-ghost btn-sm" (click)="clearFilters()"><lucide-icon name="x" [size]="14" /> Clear filters</button>
+    </div>
+  }
+</form>
+
+<section class="admin-card overflow-hidden" aria-label="Orders">
+  @if (orders.error()) {
+    <div class="p-4"><app-error-state [message]="orders.error()!" (retry)="orders.reload()" /></div>
+  } @else if (!orders.data()) {
+    <app-table-skeleton [rows]="8" [cols]="6" />
+  } @else if (orders.data()!.content.length === 0) {
+    <app-empty-state icon="receipt" title="No orders found" text="Try a different search or clear the filters.">
+      @if (hasFilters()) { <button type="button" class="btn-outline btn-sm" (click)="clearFilters()">Clear filters</button> }
+    </app-empty-state>
+  } @else {
+    <div class="overflow-x-auto transition-opacity" [class.opacity-50]="orders.loading()">
+      <table class="table-base">
+        <thead>
+          <tr>
+            <th scope="col">Order</th><th scope="col">Customer</th><th scope="col" class="hidden lg:table-cell">Items</th>
+            <th scope="col">Status</th><th scope="col" class="hidden md:table-cell">Type</th><th scope="col" class="hidden md:table-cell">Payment</th>
+            <th scope="col" class="hidden sm:table-cell">Placed</th><th scope="col" class="text-right">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (o of orders.data()!.content; track o.id) {
+            <tr class="hover:bg-charcoal-800/[0.02]">
+              <td class="whitespace-nowrap"><a [routerLink]="['/admin/orders', o.id]" class="font-semibold text-charcoal-900 hover:text-tomato-600 hover:underline">{{ o.orderNumber }}</a></td>
+              <td class="whitespace-nowrap">{{ o.contactName }}</td>
+              <td class="hidden max-w-xs truncate text-charcoal-500 lg:table-cell" [title]="o.itemsPreview">{{ o.itemCount }} · {{ o.itemsPreview }}</td>
+              <td><app-status-badge [status]="o.status" [staff]="true" /></td>
+              <td class="hidden md:table-cell">
+                <span class="inline-flex items-center gap-1 text-charcoal-600"><lucide-icon [name]="o.fulfillmentType === 'DELIVERY' ? 'bike' : 'store'" [size]="14" /> {{ o.fulfillmentType === 'DELIVERY' ? 'Delivery' : 'Pickup' }}</span>
+              </td>
+              <td class="hidden whitespace-nowrap md:table-cell">
+                <span class="text-charcoal-600">{{ o.paymentMethod === 'CASH' ? 'Cash' : 'Online' }}</span>
+                <span class="ml-1 text-xs" [class.text-basil-600]="o.paymentStatus === 'PAID'" [class.text-charcoal-400]="o.paymentStatus !== 'PAID'">· {{ o.paymentStatus.toLowerCase() }}</span>
+              </td>
+              <td class="hidden whitespace-nowrap text-charcoal-500 sm:table-cell">{{ o.createdAt | date: 'MMM d, h:mm a' }}</td>
+              <td class="text-right font-semibold tabular-nums">{{ o.total | money }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination [page]="orders.data()!.page" [size]="orders.data()!.size" [total]="orders.data()!.totalElements"
+                    [totalPages]="orders.data()!.totalPages" (pageChange)="setParam('page', $event ? '' + $event : '')" />
+  }
+</section>

@@ -1,0 +1,11 @@
+/* Form controls and validation messages. */
+@utility input {
+  @apply w-full rounded-xl border border-charcoal-800/15 bg-white px-3.5 py-2.5 text-sm text-charcoal-800
+         placeholder:text-charcoal-300 transition focus:border-tomato-400 focus:ring-4 focus:ring-tomato-100 focus:outline-none;
+}
+@utility label { @apply mb-1.5 block text-sm font-semibold text-charcoal-700; }
+@utility field-error { @apply mt-1 text-xs font-medium text-tomato-600; }
+
+@layer components {
+  .input.ng-invalid.ng-touched { @apply border-tomato-500 ring-2 ring-tomato-100; }
+}

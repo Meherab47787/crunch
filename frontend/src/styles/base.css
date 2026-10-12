@@ -1,0 +1,23 @@
+/* Element defaults: typography, focus ring, reduced motion. */
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-cream-100 text-charcoal-800 font-sans antialiased;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight;
+  }
+  /* lucide renders an inline host; make transforms (animate-spin, rotate) work on it */
+  lucide-icon, lucide-angular { display: inline-flex; vertical-align: middle; }
+  :focus-visible {
+    outline: 3px solid var(--color-ember-400);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+  }
+}

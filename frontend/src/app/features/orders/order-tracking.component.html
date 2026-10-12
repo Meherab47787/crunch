@@ -1,0 +1,32 @@
+<div class="container-page py-10">
+  @if (placed() && order()) {
+    <div class="no-print mb-8 overflow-hidden rounded-[2rem] bg-tomato-500 p-8 text-white shadow-lift animate-fade-up">
+      <lucide-icon name="circle-check" [size]="40" class="text-ember-200" />
+      <h1 class="mt-3 text-4xl font-extrabold">Thanks, {{ firstName() }}! Your order is in.</h1>
+      <p class="mt-2 max-w-xl text-white/85">We’ve sent it to the kitchen. Keep this page open — it updates automatically. A confirmation is linked to {{ order()!.contact.email }}.</p>
+    </div>
+  } @else {
+    <h1 class="no-print mb-6 text-4xl font-extrabold">Track your order</h1>
+  }
+
+  @if (loading() && !order()) {
+    <div class="grid gap-6 lg:grid-cols-[1fr_360px]"><div class="skeleton h-72 rounded-3xl"></div><div class="skeleton h-72 rounded-3xl"></div></div>
+  } @else if (error() && !order()) {
+    <app-empty-state icon="receipt" title="We couldn’t find that order" [text]="error()!">
+      <a routerLink="/track" class="btn-primary">Look up another order</a>
+    </app-empty-state>
+  } @else if (order(); as o) {
+    <div class="no-print">
+      <app-order-view [order]="o">
+        <div class="card space-y-2 p-6">
+          @if (active()) {
+            <p class="flex items-center gap-2 text-xs text-charcoal-500"><span class="h-2 w-2 animate-pulse rounded-full bg-basil-500"></span> Live — refreshes every 15 seconds</p>
+          }
+          <button type="button" class="btn-outline w-full" (click)="print()"><lucide-icon name="printer" [size]="16" /> Print receipt</button>
+          <a routerLink="/menu" class="btn-ghost w-full">Order something else</a>
+        </div>
+      </app-order-view>
+    </div>
+    <app-receipt [order]="o" class="print-only" />
+  }
+</div>

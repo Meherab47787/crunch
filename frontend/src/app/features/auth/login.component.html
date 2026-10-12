@@ -1,0 +1,24 @@
+<app-auth-shell heading="Welcome back" sub="Sign in to order faster and track your food.">
+  <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4" novalidate>
+    @if (error()) { <p class="rounded-xl bg-tomato-50 px-3 py-2.5 text-sm font-semibold text-tomato-700" role="alert">{{ error() }}</p> }
+    <div>
+      <label class="label" for="email">Email</label>
+      <input id="email" type="email" class="input" formControlName="email" autocomplete="email" />
+      @if (form.controls.email.invalid && form.controls.email.touched) { <p class="field-error">Enter a valid email.</p> }
+    </div>
+    <div>
+      <label class="label" for="password">Password</label>
+      <div class="relative">
+        <input id="password" [type]="show() ? 'text' : 'password'" class="input pr-11" formControlName="password" autocomplete="current-password" />
+        <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-charcoal-400" (click)="show.set(!show())"
+                [attr.aria-label]="show() ? 'Hide password' : 'Show password'"><lucide-icon [name]="show() ? 'eye-off' : 'eye'" [size]="18" /></button>
+      </div>
+      @if (form.controls.password.invalid && form.controls.password.touched) { <p class="field-error">Enter your password.</p> }
+    </div>
+    <button type="submit" class="btn-primary btn-lg w-full" [disabled]="busy()">
+      @if (busy()) { <lucide-icon name="loader" [size]="18" class="animate-spin" /> } Sign in
+    </button>
+  </form>
+  <p class="mt-6 text-center text-sm text-charcoal-600">New here? <a routerLink="/register" [queryParams]="{ returnUrl: returnUrl() }" class="font-bold text-tomato-600 hover:underline">Create an account</a></p>
+  <p class="mt-2 text-center text-sm text-charcoal-500">Or <a routerLink="/menu" class="font-semibold underline">order as a guest</a></p>
+</app-auth-shell>

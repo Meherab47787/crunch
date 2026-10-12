@@ -1,0 +1,149 @@
+<div class="no-print">
+  <a routerLink="/admin/orders" class="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-charcoal-500 hover:text-charcoal-900">
+    <lucide-icon name="arrow-left" [size]="16" /> All orders
+  </a>
+
+  @if (order.error() && !order.data()) {
+    <app-error-state [message]="order.error()!" (retry)="order.reload()" />
+  } @else if (!order.data()) {
+    <div class="skeleton mb-6 h-12 w-72"></div>
+    <div class="grid gap-4 lg:grid-cols-3">
+      <div class="skeleton h-96 rounded-2xl lg:col-span-2"></div>
+      <div class="skeleton h-96 rounded-2xl"></div>
+    </div>
+  } @else {
+    @let o = order.data()!;
+    <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-widest text-charcoal-400">Order</p>
+        <h1 class="flex flex-wrap items-center gap-3 text-2xl font-extrabold text-charcoal-900 sm:text-3xl">
+          {{ o.orderNumber }} <app-status-badge [status]="o.status" [staff]="true" />
+        </h1>
+        <p class="mt-1 text-sm text-charcoal-500">
+          Placed {{ o.createdAt | date: 'EEE, MMM d, y · h:mm a' }}
+          @if (o.estimatedReadyAt && o.status !== 'DELIVERED' && o.status !== 'CANCELLED') { · due {{ o.estimatedReadyAt | date: 'h:mm a' }} }
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" class="btn-outline btn-sm" (click)="print('receipt')"><lucide-icon name="receipt" [size]="14" /> Print receipt</button>
+        <button type="button" class="btn-outline btn-sm" (click)="print('ticket')"><lucide-icon name="printer" [size]="14" /> Print kitchen ticket</button>
+        @if (canCancel()) {
+          <button type="button" class="btn-danger btn-sm" (click)="openCancel()" [disabled]="busy()"><lucide-icon name="ban" [size]="14" /> Cancel order</button>
+        }
+        @if (o.nextStatus) {
+          <button type="button" class="btn-primary btn-sm" (click)="advance()" [disabled]="busy()">
+            @if (busy()) { <span class="inline-flex animate-spin" aria-hidden="true"><lucide-icon name="loader" [size]="14" /></span> } @else { <lucide-icon name="arrow-right" [size]="14" /> }
+            Mark as {{ statusLabel[o.nextStatus] }}
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (o.allergyNotes) {
+      <div role="alert" class="mb-4 flex gap-3 rounded-2xl border-2 border-tomato-400 bg-tomato-50 p-4 text-tomato-800">
+        <span class="inline-flex shrink-0 text-tomato-600" aria-hidden="true"><lucide-icon name="triangle-alert" [size]="22" /></span>
+        <div><p class="text-xs font-bold uppercase tracking-wider">Allergy notes</p><p class="font-semibold">{{ o.allergyNotes }}</p></div>
+      </div>
+    }
+    @if (o.status === 'CANCELLED' && o.cancelReason) {
+      <div class="mb-4 rounded-2xl border border-charcoal-800/10 bg-white p-4 text-sm"><b>Cancellation reason:</b> {{ o.cancelReason }}</div>
+    }
+
+    <div class="grid gap-4 lg:grid-cols-3">
+      <div class="space-y-4 lg:col-span-2">
+        <section class="admin-card p-5" aria-labelledby="items-h">
+          <h2 id="items-h" class="mb-4 text-base font-bold">Items</h2>
+          <app-order-items [items]="o.items" />
+          <dl class="mt-5 space-y-1.5 border-t border-charcoal-800/10 pt-4 text-sm">
+            <div class="flex justify-between"><dt class="text-charcoal-500">Subtotal</dt><dd class="tabular-nums">{{ o.subtotal | money }}</dd></div>
+            @if (o.discountTotal > 0) {
+              <div class="flex justify-between"><dt class="text-charcoal-500">Discounts @if (o.couponCode) { <span class="chip ml-1 bg-basil-500/10 text-basil-600">{{ o.couponCode }}</span> }</dt><dd class="tabular-nums text-basil-600">−{{ o.discountTotal | money }}</dd></div>
+            }
+            <div class="flex justify-between"><dt class="text-charcoal-500">Delivery fee</dt><dd class="tabular-nums">{{ o.deliveryFee | money }}</dd></div>
+            <div class="flex justify-between"><dt class="text-charcoal-500">Tax</dt><dd class="tabular-nums">{{ o.tax | money }}</dd></div>
+            <div class="flex justify-between pt-1 text-base font-bold"><dt>Total</dt><dd class="tabular-nums">{{ o.total | money }}</dd></div>
+          </dl>
+        </section>
+
+        @if (o.specialInstructions || o.deliveryInstructions) {
+          <section class="admin-card p-5" aria-labelledby="notes-h">
+            <h2 id="notes-h" class="mb-3 text-base font-bold">Notes</h2>
+            @if (o.specialInstructions) {
+              <div class="mb-2 rounded-xl border border-ember-300 bg-ember-50 p-3 text-sm text-ember-700"><b class="block text-xs uppercase tracking-wider">Special instructions</b>{{ o.specialInstructions }}</div>
+            }
+            @if (o.deliveryInstructions) {
+              <div class="rounded-xl bg-charcoal-800/[0.04] p-3 text-sm"><b class="block text-xs uppercase tracking-wider text-charcoal-500">Delivery instructions</b>{{ o.deliveryInstructions }}</div>
+            }
+          </section>
+        }
+      </div>
+
+      <div class="space-y-4">
+        <section class="admin-card p-5" aria-labelledby="cust-h">
+          <h2 id="cust-h" class="mb-3 text-base font-bold">Customer</h2>
+          <p class="font-semibold">{{ o.contact.name }}</p>
+          <p class="mt-1 flex items-center gap-2 text-sm"><lucide-icon name="mail" [size]="14" class="text-charcoal-400" /><a [href]="'mailto:' + o.contact.email" class="hover:underline">{{ o.contact.email }}</a></p>
+          <p class="mt-1 flex items-center gap-2 text-sm"><lucide-icon name="phone" [size]="14" class="text-charcoal-400" /><a [href]="'tel:' + o.contact.phone" class="hover:underline">{{ o.contact.phone }}</a></p>
+          @if (o.customerId) {
+            <a [routerLink]="['/admin/customers', o.customerId]" class="mt-3 inline-block text-sm font-semibold text-tomato-600 hover:underline">View customer profile →</a>
+          } @else {
+            <p class="mt-3 text-xs text-charcoal-400">Guest checkout</p>
+          }
+        </section>
+
+        <section class="admin-card p-5" aria-labelledby="ful-h">
+          <h2 id="ful-h" class="mb-3 text-base font-bold">Fulfillment &amp; payment</h2>
+          <dl class="space-y-2 text-sm">
+            <div class="flex justify-between gap-3"><dt class="text-charcoal-500">Type</dt><dd class="flex items-center gap-1.5 font-semibold"><lucide-icon [name]="o.fulfillmentType === 'DELIVERY' ? 'bike' : 'store'" [size]="14" />{{ o.fulfillmentType === 'DELIVERY' ? 'Delivery' : 'Pickup' }}</dd></div>
+            @if (o.address) {
+              <div class="flex justify-between gap-3"><dt class="text-charcoal-500">Address</dt>
+                <dd class="text-right">{{ o.address.line1 }}@if (o.address.line2) {<br />{{ o.address.line2 }}}<br />{{ o.address.city }} {{ o.address.postalCode }}</dd></div>
+            }
+            <div class="flex justify-between gap-3"><dt class="text-charcoal-500">Method</dt><dd class="flex items-center gap-1.5"><lucide-icon [name]="o.paymentMethod === 'CASH' ? 'banknote' : 'credit-card'" [size]="14" />{{ o.paymentMethod === 'CASH' ? 'Cash' : 'Online' }}</dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-charcoal-500">Payment status</dt>
+              <dd><span class="chip" [class]="o.paymentStatus === 'PAID' ? 'chip bg-basil-500/10 text-basil-600' : o.paymentStatus === 'PENDING' ? 'chip bg-ember-100 text-ember-700' : 'chip bg-tomato-100 text-tomato-700'">{{ o.paymentStatus }}</span></dd></div>
+          </dl>
+        </section>
+
+        <section class="admin-card p-5" aria-labelledby="hist-h">
+          <h2 id="hist-h" class="mb-4 text-base font-bold">Status history</h2>
+          <ol class="relative space-y-4 border-l border-charcoal-800/10 pl-5">
+            @for (h of history(); track $index) {
+              <li class="relative">
+                <span class="absolute -left-[1.6rem] top-1 h-3 w-3 rounded-full ring-4 ring-white" [class]="h.toStatus === 'CANCELLED' ? 'absolute -left-[1.6rem] top-1 h-3 w-3 rounded-full ring-4 ring-white bg-tomato-500' : 'absolute -left-[1.6rem] top-1 h-3 w-3 rounded-full ring-4 ring-white bg-charcoal-400'"></span>
+                <p class="text-sm font-semibold">{{ statusLabel[h.toStatus] }}</p>
+                <p class="text-xs text-charcoal-500">{{ h.createdAt | date: 'MMM d, h:mm:ss a' }}@if (h.changedBy) { · {{ h.changedBy }} }</p>
+                @if (h.note) { <p class="mt-1 text-xs italic text-charcoal-600">“{{ h.note }}”</p> }
+              </li>
+            }
+          </ol>
+        </section>
+      </div>
+    </div>
+  }
+</div>
+
+@if (order.data() && printMode()) {
+  <div class="print-only">
+    @if (printMode() === 'receipt') { <app-receipt-print [order]="order.data()!" /> }
+    @else { <app-kitchen-ticket-print [order]="order.data()!" /> }
+  </div>
+}
+
+@if (cancelOpen()) {
+  <app-modal title="Cancel order" (closed)="cancelOpen.set(false)">
+    <form (submit)="$event.preventDefault(); confirmCancel()">
+      <p class="mb-4 text-sm text-charcoal-600">The customer will see this order as cancelled. Coupons are released and online payments refunded.</p>
+      <label class="label" for="cancel-reason">Reason</label>
+      <textarea id="cancel-reason" class="input min-h-24" name="reason" [(ngModel)]="cancelReason" required maxlength="300"
+                placeholder="e.g. Out of ingredients, customer request…"></textarea>
+      @if (cancelTouched() && !cancelReason.trim()) { <p class="field-error">Please give a reason.</p> }
+      <div class="mt-6 flex justify-end gap-2">
+        <button type="button" class="btn-outline" (click)="cancelOpen.set(false)">Keep order</button>
+        <button type="submit" class="btn bg-tomato-600 text-white hover:bg-tomato-700" [disabled]="busy()">
+          @if (busy()) { <span class="inline-flex animate-spin" aria-hidden="true"><lucide-icon name="loader" [size]="16" /></span> } Cancel order
+        </button>
+      </div>
+    </form>
+  </app-modal>
+}

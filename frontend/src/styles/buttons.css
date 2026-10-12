@@ -1,0 +1,13 @@
+/* Buttons: .btn is the base; combine with one variant and optionally a size (btn-sm / btn-lg). */
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold
+         transition duration-200 select-none disabled:cursor-not-allowed disabled:opacity-50;
+}
+@utility btn-primary { @apply btn bg-tomato-500 text-white shadow-sm hover:bg-tomato-600 active:scale-[0.98]; }
+@utility btn-dark { @apply btn bg-charcoal-800 text-cream-100 hover:bg-charcoal-900 active:scale-[0.98]; }
+@utility btn-ember { @apply btn bg-ember-400 text-charcoal-900 hover:bg-ember-300 active:scale-[0.98]; }
+@utility btn-outline { @apply btn border border-charcoal-800/15 bg-white text-charcoal-800 hover:border-charcoal-800/40; }
+@utility btn-ghost { @apply btn text-charcoal-700 hover:bg-charcoal-800/5; }
+@utility btn-danger { @apply btn bg-white text-tomato-700 border border-tomato-200 hover:bg-tomato-50; }
+@utility btn-sm { @apply px-3.5 py-1.5 text-xs; }
+@utility btn-lg { @apply px-7 py-3.5 text-base; }

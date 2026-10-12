@@ -1,0 +1,30 @@
+@let comp = component();
+<fieldset class="card p-5" [class.ring-2]="invalid()" [class.ring-tomato-300]="invalid()">
+  <legend class="sr-only">{{ comp.name }}</legend>
+  <div class="mb-3 flex items-center justify-between">
+    <h2 class="text-lg font-bold">{{ comp.name }}</h2>
+    <span class="chip bg-charcoal-800 text-cream-100">{{ comp.quantity > 1 ? comp.quantity + ' picks' : 'Required' }}</span>
+  </div>
+  @for (slot of slots(); track slot) {
+    @if (comp.quantity > 1) {
+      <p class="mb-2 mt-3 text-xs font-bold uppercase tracking-wide text-charcoal-400">Pick {{ slot + 1 }}</p>
+    }
+    <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      @for (ch of comp.choices; track ch.productId) {
+        @let on = picks()[slot] === ch.productId;
+        <button type="button" class="group flex flex-col overflow-hidden rounded-2xl border-2 text-left transition disabled:cursor-not-allowed disabled:opacity-40"
+                [class]="on ? 'border-tomato-500 bg-tomato-50' : 'border-charcoal-800/10 hover:border-charcoal-800/30'"
+                [disabled]="!ch.available" [attr.aria-pressed]="on" (click)="pick.emit({ slot, productId: ch.productId })">
+          @if (ch.imageUrl) { <img [src]="ch.imageUrl" alt="" class="aspect-[4/3] w-full object-cover" loading="lazy" /> }
+          <span class="flex flex-1 items-start justify-between gap-1 p-2.5">
+            <span class="text-xs font-bold leading-tight">{{ ch.name }}</span>
+            @if (on) { <lucide-icon name="circle-check" [size]="16" class="shrink-0 text-tomato-500" /> }
+          </span>
+          <span class="px-2.5 pb-2 text-[11px] font-semibold text-charcoal-500">
+            {{ !ch.available ? 'Sold out' : ch.extraPrice > 0 ? (ch.extraPrice | money: true) : 'Included' }}
+          </span>
+        </button>
+      }
+    </div>
+  }
+</fieldset>

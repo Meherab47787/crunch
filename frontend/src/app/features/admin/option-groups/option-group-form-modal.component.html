@@ -1,0 +1,79 @@
+<app-modal [title]="group() ? 'Edit option group' : 'New option group'" size="lg" (closed)="closed.emit()">
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate class="space-y-4">
+    @if (formError()) { <div role="alert" class="rounded-xl bg-tomato-50 p-3 text-sm text-tomato-800">{{ formError() }}</div> }
+    @if (usage() > 0) {
+      <p class="rounded-xl bg-ember-50 p-3 text-sm text-ember-700">Used by {{ usage() }} product(s) — changes apply to all of them.</p>
+    }
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label class="label" for="gf-name">Name *</label>
+        <input id="gf-name" class="input" formControlName="name" placeholder="e.g. Extra toppings" />
+        @if (err(form.controls.name, 'Name'); as e) { <p class="field-error">{{ e }}</p> }
+      </div>
+      <div>
+        <label class="label" for="gf-desc">Description</label>
+        <input id="gf-desc" class="input" formControlName="description" />
+        @if (err(form.controls.description, 'Description'); as e) { <p class="field-error">{{ e }}</p> }
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-4 sm:grid-cols-[auto_1fr_1fr]">
+      <fieldset class="col-span-2 sm:col-span-1">
+        <legend class="label">Selection</legend>
+        <div class="inline-flex rounded-full bg-charcoal-800/5 p-1">
+          @for (t of selectionTypes; track t.value) {
+            <label class="cursor-pointer rounded-full px-4 py-1.5 text-sm font-semibold transition has-[:checked]:bg-white has-[:checked]:shadow-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ember-400">
+              <input type="radio" class="sr-only" formControlName="selectionType" [value]="t.value" (change)="onTypeChange()" /> {{ t.label }}
+            </label>
+          }
+        </div>
+      </fieldset>
+      <div>
+        <label class="label" for="gf-min">Min picks</label>
+        <input id="gf-min" class="input" type="number" min="0" max="20" formControlName="minSelect" />
+        @if (err(form.controls.minSelect, 'Min'); as e) { <p class="field-error">{{ e }}</p> }
+      </div>
+      <div>
+        <label class="label" for="gf-max">Max picks</label>
+        <input id="gf-max" class="input" type="number" min="1" max="20" formControlName="maxSelect" [readonly]="form.controls.selectionType.value === 'SINGLE'" />
+        @if (err(form.controls.maxSelect, 'Max'); as e) { <p class="field-error">{{ e }}</p> }
+      </div>
+    </div>
+    <p class="text-xs text-charcoal-500">Min ≥ 1 makes the group required. Single-choice groups always allow at most one pick.</p>
+
+    <div>
+      <p class="label">Options *</p>
+      <div class="space-y-2" formArrayName="options">
+        @for (o of form.controls.options.controls; track o; let i = $index; let last = $last) {
+          <div [formGroup]="o" class="grid grid-cols-2 items-end gap-2 rounded-xl border border-charcoal-800/10 p-2 sm:grid-cols-[2fr_1fr_auto_auto_auto]">
+            <div class="col-span-2 sm:col-span-1">
+              <label class="sr-only" [for]="'go-n-' + i">Option {{ i + 1 }} name</label>
+              <input [id]="'go-n-' + i" class="input" formControlName="name" placeholder="Option name" />
+              @if (err(o.controls.name, 'Name'); as e) { <p class="field-error">{{ e }}</p> }
+            </div>
+            <div>
+              <label class="sr-only" [for]="'go-p-' + i">Option {{ i + 1 }} price</label>
+              <input [id]="'go-p-' + i" class="input" type="number" min="0" step="0.01" formControlName="priceDelta" title="Extra price" />
+              @if (err(o.controls.priceDelta, 'Price'); as e) { <p class="field-error">{{ e }}</p> }
+            </div>
+            <label class="flex h-10 items-center gap-1.5 text-sm"><input type="checkbox" class="h-4 w-4 accent-tomato-500" formControlName="defaultOption" /> Default</label>
+            <label class="flex h-10 items-center gap-1.5 text-sm"><input type="checkbox" class="h-4 w-4 accent-tomato-500" formControlName="available" /> Available</label>
+            <div class="col-span-2 flex h-10 items-center justify-end gap-1 sm:col-span-1">
+              <button type="button" class="btn-ghost btn-sm !px-2" [disabled]="i === 0" (click)="move(i, -1)" [attr.aria-label]="'Move option ' + (i + 1) + ' up'"><lucide-icon [img]="upIcon" [size]="14" /></button>
+              <button type="button" class="btn-ghost btn-sm !px-2" [disabled]="last" (click)="move(i, 1)" [attr.aria-label]="'Move option ' + (i + 1) + ' down'"><lucide-icon name="chevron-down" [size]="14" /></button>
+              <button type="button" class="btn-ghost btn-sm !px-2 text-tomato-600" (click)="removeOption(i)" [attr.aria-label]="'Remove option ' + (i + 1)"><lucide-icon name="x" [size]="14" /></button>
+            </div>
+          </div>
+        }
+      </div>
+      @if (form.controls.options.length === 0) { <p class="field-error">Add at least one option.</p> }
+      <button type="button" class="btn-ghost btn-sm mt-2" (click)="addOption()"><lucide-icon name="plus" [size]="14" /> Add option</button>
+    </div>
+
+    <div class="flex justify-end gap-2 pt-2">
+      <button type="button" class="btn-outline" (click)="closed.emit()">Cancel</button>
+      <button type="submit" class="btn-primary" [disabled]="saving()">
+        @if (saving()) { <span class="inline-flex animate-spin" aria-hidden="true"><lucide-icon name="loader" [size]="16" /></span> } {{ group() ? 'Save' : 'Create' }}
+      </button>
+    </div>
+  </form>
+</app-modal>

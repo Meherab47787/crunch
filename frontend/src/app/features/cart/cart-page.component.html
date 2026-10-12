@@ -1,0 +1,81 @@
+<div class="container-page py-10">
+  <h1 class="text-4xl font-extrabold">Your bag</h1>
+  @if (cart.isEmpty()) {
+    <app-empty-state icon="shopping-bag" title="Nothing here yet" text="Add something delicious and it’ll show up here.">
+      <a routerLink="/menu" class="btn-primary">Browse the menu</a>
+    </app-empty-state>
+  } @else {
+    <div class="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
+      <section aria-label="Items">
+        @if (cart.quoteError()) {
+          <p class="mb-4 rounded-2xl bg-tomato-50 px-4 py-3 text-sm font-medium text-tomato-700" role="alert">{{ cart.quoteError() }}</p>
+        }
+        <ul class="space-y-3">
+          @for (line of cart.lines(); track line.key; let i = $index) {
+            @let q = cart.quote()?.lines?.[i];
+            <li class="card flex gap-4 p-4" [class.ring-2]="q && !q.valid" [class.ring-tomato-300]="q && !q.valid">
+              <a [routerLink]="['/menu/item', line.slug]" class="shrink-0">
+                <img [src]="line.imageUrl" [alt]="line.name" class="h-24 w-24 rounded-2xl object-cover sm:h-28 sm:w-28" loading="lazy" />
+              </a>
+              <div class="flex min-w-0 flex-1 flex-col">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-charcoal-400">{{ line.categoryName }}</p>
+                    <h2 class="text-lg font-bold leading-tight">{{ line.name }}</h2>
+                  </div>
+                  <div class="text-right">
+                    <p class="font-bold tabular-nums">{{ (q?.lineTotal ?? line.displayUnitPrice * line.quantity) | money }}</p>
+                    @if (q && q.promotionDiscount > 0) {
+                      <p class="text-xs text-charcoal-400 line-through tabular-nums">{{ q.lineSubtotal | money }}</p>
+                    }
+                  </div>
+                </div>
+                @if (line.summary.length) {
+                  <ul class="mt-1.5 flex flex-wrap gap-1.5">
+                    @for (s of line.summary; track $index) {
+                      <li class="rounded-full bg-cream-200 px-2 py-0.5 text-xs text-charcoal-600">{{ s }}</li>
+                    }
+                  </ul>
+                }
+                @if (q?.promotionName) {
+                  <p class="mt-1.5 text-xs font-semibold text-basil-600"><lucide-icon name="tag" [size]="12" class="inline" /> {{ q?.promotionName }}</p>
+                }
+                @if (q && !q.valid) {
+                  <p class="mt-1.5 text-sm font-semibold text-tomato-600" role="alert">{{ q.error }}</p>
+                }
+                <div class="mt-auto flex flex-wrap items-center gap-3 pt-3">
+                  <app-quantity-stepper size="sm" [value]="line.quantity" [label]="line.name" (change)="cart.setQuantity(line.key, $event)" />
+                  <a [routerLink]="['/menu/item', line.slug]" [queryParams]="{ edit: line.key }" class="text-sm font-semibold text-charcoal-500 hover:text-charcoal-900">
+                    <lucide-icon name="pencil" [size]="13" class="inline" /> Edit
+                  </a>
+                  <button type="button" class="text-sm font-semibold text-charcoal-500 hover:text-tomato-600" (click)="remove(line)">
+                    <lucide-icon name="trash-2" [size]="13" class="inline" /> Remove
+                  </button>
+                </div>
+              </div>
+            </li>
+          }
+        </ul>
+        <a routerLink="/menu" class="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-tomato-600 hover:underline">
+          <lucide-icon name="arrow-left" [size]="15" /> Keep shopping
+        </a>
+      </section>
+
+      <aside class="lg:sticky lg:top-24 lg:self-start" aria-label="Order summary">
+        <div class="card space-y-5 p-6">
+          <app-fulfillment-toggle />
+          <app-coupon-field />
+          <app-quote-summary [quote]="cart.quote()" [loading]="cart.quoteLoading()" [showDelivery]="cart.fulfillmentType() === 'DELIVERY'" />
+          @for (issue of quoteIssues(); track issue) {
+            <p class="rounded-xl bg-tomato-50 px-3 py-2 text-xs font-semibold text-tomato-700">{{ issue }}</p>
+          }
+          <a routerLink="/checkout" class="btn-primary btn-lg w-full" [class.pointer-events-none]="cart.quote()?.valid === false"
+             [class.opacity-50]="cart.quote()?.valid === false" [attr.aria-disabled]="cart.quote()?.valid === false">
+            Go to checkout <lucide-icon name="arrow-right" [size]="18" />
+          </a>
+          <p class="flex items-center justify-center gap-1.5 text-xs text-charcoal-400"><lucide-icon name="lock" [size]="12" /> Prices are confirmed by the restaurant at checkout</p>
+        </div>
+      </aside>
+    </div>
+  }
+</div>

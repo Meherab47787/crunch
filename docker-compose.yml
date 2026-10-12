@@ -1,0 +1,75 @@
+name: crustcrunch
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-crustcrunch}
+      POSTGRES_USER: ${POSTGRES_USER:-crustcrunch}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-crustcrunch}
+      DB_USERNAME: ${POSTGRES_USER:-crustcrunch}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-1440}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8081}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      KITCHEN_EMAIL: ${KITCHEN_EMAIL:-}
+      KITCHEN_PASSWORD: ${KITCHEN_PASSWORD:-}
+      DEMO_DATA: ${DEMO_DATA:-false}
+      TAX_RATE: ${TAX_RATE:-0.08}
+      DELIVERY_FEE: ${DELIVERY_FEE:-2.99}
+      FREE_DELIVERY_THRESHOLD: ${FREE_DELIVERY_THRESHOLD:-35.00}
+      MIN_DELIVERY_ORDER: ${MIN_DELIVERY_ORDER:-10.00}
+      CURRENCY: ${CURRENCY:-USD}
+      PAYMENTS_SIMULATED: ${PAYMENTS_SIMULATED:-true}
+      RESTAURANT_TIMEZONE: ${RESTAURANT_TIMEZONE:-UTC}
+      RESTAURANT_PHONE: ${RESTAURANT_PHONE:-}
+      RESTAURANT_EMAIL: ${RESTAURANT_EMAIL:-}
+      RESTAURANT_ADDRESS: ${RESTAURANT_ADDRESS:-}
+      UPLOADS_DIR: /app/uploads
+    volumes:
+      - uploads:/app/uploads
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health/readiness | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 10
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-8081}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/healthz | grep -q ok"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  pgdata:
+  uploads:

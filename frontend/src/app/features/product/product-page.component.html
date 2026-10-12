@@ -1,0 +1,156 @@
+@if (detail.loading()) {
+  <div class="container-page grid gap-10 py-10 lg:grid-cols-2" aria-busy="true">
+    <div class="skeleton aspect-square rounded-[2rem]"></div>
+    <div class="space-y-4"><div class="skeleton h-10 w-3/4"></div><div class="skeleton h-4 w-full"></div><div class="skeleton h-4 w-2/3"></div><div class="skeleton mt-8 h-40 w-full"></div></div>
+  </div>
+} @else if (detail.error() || !detail.data()) {
+  <div class="container-page py-16">
+    <app-empty-state icon="pizza" title="We couldn’t find that item" [text]="detail.error() ?? ''">
+      <a routerLink="/menu" class="btn-primary">Back to the menu</a>
+    </app-empty-state>
+  </div>
+} @else {
+  @let d = detail.data()!;
+  @let p = d.summary;
+  <div class="container-page pb-36 pt-6 lg:pb-16">
+    <nav class="mb-5 text-sm text-charcoal-500" aria-label="Breadcrumb">
+      <a routerLink="/menu" class="hover:text-tomato-600">Menu</a> <span class="mx-1.5">/</span>
+      <a [routerLink]="['/menu', p.categorySlug]" class="hover:text-tomato-600">{{ p.categoryName }}</a> <span class="mx-1.5">/</span>
+      <span class="font-semibold text-charcoal-800">{{ p.name }}</span>
+    </nav>
+
+    <div class="grid gap-8 lg:grid-cols-[1fr_1.05fr] lg:gap-12">
+      <!-- gallery -->
+      <div class="lg:sticky lg:top-24 lg:self-start">
+        <div class="relative overflow-hidden rounded-[2rem] bg-cream-200 shadow-card">
+          <img [src]="activeImage() ?? p.imageUrl" [alt]="p.name" class="aspect-square w-full object-cover" />
+          @if (d.promotion) {
+            <span class="absolute left-4 top-4 rotate-[-4deg] rounded-xl bg-tomato-500 px-3 py-2 font-display text-lg font-extrabold text-white shadow-lift">
+              {{ d.promotion.discountType === 'PERCENT' ? d.promotion.discountValue + '% OFF' : (d.promotion.discountValue | money) + ' OFF' }}
+            </span>
+          }
+          @if (!p.available) {
+            <div class="absolute inset-0 grid place-items-center bg-charcoal-900/50"><span class="chip bg-white px-4 py-2 text-sm text-charcoal-800">Sold out for now</span></div>
+          }
+        </div>
+        @if (d.images.length > 1) {
+          <div class="mt-3 flex gap-2">
+            @for (img of d.images; track img) {
+              <button type="button" class="h-16 w-16 overflow-hidden rounded-xl ring-2 transition" [class.ring-tomato-500]="(activeImage() ?? p.imageUrl) === img"
+                      [class.ring-transparent]="(activeImage() ?? p.imageUrl) !== img" (click)="activeImage.set(img)" aria-label="Show image">
+                <img [src]="img" alt="" class="h-full w-full object-cover" />
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- info + customization -->
+      <div>
+        <div class="flex flex-wrap items-center gap-2">
+          <app-diet-badges [vegetarian]="p.vegetarian" [spicy]="p.spicy" />
+          @if (p.bestseller) { <span class="chip bg-ember-100 text-ember-700"><lucide-icon name="flame" [size]="11" /> Bestseller</span> }
+          @if (p.newArrival) { <span class="chip bg-ember-300 text-charcoal-900">New</span> }
+          @if (p.productType === 'COMBO') { <span class="chip bg-charcoal-800 text-cream-100"><lucide-icon name="package" [size]="11" /> Combo</span> }
+        </div>
+        <h1 class="mt-3 text-4xl font-extrabold leading-tight sm:text-5xl">{{ p.name }}</h1>
+        @if (p.ratingCount > 0) {
+          <a href="#reviews" class="mt-2 inline-block"><app-rating-stars [rating]="p.ratingAvg" [count]="p.ratingCount" /></a>
+        }
+        <p class="mt-4 text-lg text-charcoal-600">{{ p.description }}</p>
+
+        <dl class="mt-5 grid gap-3 rounded-2xl bg-white p-4 text-sm shadow-card sm:grid-cols-3">
+          @if (d.ingredients) { <div class="sm:col-span-3"><dt class="font-semibold text-charcoal-800">Ingredients</dt><dd class="text-charcoal-500">{{ d.ingredients }}</dd></div> }
+          <div><dt class="font-semibold text-charcoal-800">Allergens</dt><dd class="text-charcoal-500">{{ p.allergens || 'None listed' }}</dd></div>
+          @if (p.calories) { <div><dt class="font-semibold text-charcoal-800">Calories</dt><dd class="text-charcoal-500">{{ p.calories }} kcal</dd></div> }
+          <div><dt class="font-semibold text-charcoal-800">Ready in</dt><dd class="text-charcoal-500">~{{ d.prepMinutes }} min</dd></div>
+        </dl>
+
+        <form class="mt-8 space-y-6" (ngSubmit)="submit()" novalidate>
+          <!-- sizes -->
+          @if (d.variants.length) {
+            <fieldset class="card p-5">
+              <legend class="sr-only">Size</legend>
+              <div class="mb-3 flex items-center justify-between">
+                <h2 class="text-lg font-bold">Choose a size</h2>
+                <span class="chip bg-charcoal-800 text-cream-100">Required</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                @for (v of d.variants; track v.id) {
+                  <label class="relative flex cursor-pointer flex-col rounded-2xl border-2 px-3 py-3 text-center transition has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-ember-200"
+                         [class]="c.variantId() === v.id ? 'border-tomato-500 bg-tomato-50' : 'border-charcoal-800/10 hover:border-charcoal-800/30'"
+                         [class.opacity-40]="!v.available" [class.cursor-not-allowed]="!v.available">
+                    <input type="radio" name="variant" class="sr-only" [value]="v.id" [disabled]="!v.available"
+                           [checked]="c.variantId() === v.id" (change)="c.variantId.set(v.id)" />
+                    <span class="text-sm font-bold">{{ v.name }}</span>
+                    <span class="text-xs text-charcoal-500">{{ v.available ? (p.basePrice + v.priceDelta | money) : 'Sold out' }}</span>
+                  </label>
+                }
+              </div>
+            </fieldset>
+          }
+
+          <!-- option groups -->
+          @for (g of d.groups; track g.id) {
+            <app-option-group [group]="g" [selected]="c.selectedFor(g.id)" [showErrors]="triedSubmit()"
+                              (toggle)="c.toggleOption(g, $event)" />
+          }
+
+          <!-- combo slots -->
+          @for (comp of d.comboComponents; track comp.id) {
+            <app-combo-slot [component]="comp" [picks]="c.comboPicks()[comp.id]" [showErrors]="triedSubmit()"
+                            (pick)="c.setComboPick(comp.id, $event.slot, $event.productId)" />
+          }
+
+          <div class="card p-5">
+            <label for="notes" class="label">Special requests <span class="font-normal text-charcoal-400">(optional)</span></label>
+            <textarea id="notes" rows="2" maxlength="300" class="input" placeholder="e.g. cut into squares, sauce on the side"
+                      [ngModel]="c.notes()" (ngModelChange)="c.notes.set($event)" name="notes"></textarea>
+          </div>
+
+          <!-- add bar (sticky on mobile) -->
+          <div class="fixed inset-x-0 bottom-0 z-40 border-t border-charcoal-800/10 bg-white/95 p-4 backdrop-blur lg:static lg:rounded-3xl lg:border-0 lg:bg-charcoal-800 lg:p-5 lg:text-cream-100 lg:shadow-lift">
+            @if (triedSubmit() && c.problems().length) {
+              <p class="mb-3 flex items-center gap-2 text-sm font-semibold text-tomato-600 lg:text-ember-300" role="alert">
+                <lucide-icon name="circle-alert" [size]="16" /> {{ c.problems()[0] }}
+              </p>
+            }
+            <div class="mx-auto flex max-w-7xl items-center gap-3">
+              <app-quantity-stepper [value]="c.quantity()" (change)="c.quantity.set($event)" [label]="p.name" class="lg:text-charcoal-800" />
+              <button type="submit" class="btn-primary btn-lg flex-1 justify-between" [disabled]="!p.available">
+                <span>{{ !p.available ? 'Sold out' : editKey() ? 'Update bag' : 'Add to bag' }}</span>
+                <span class="tabular-nums">
+                  @if (c.discountPerUnit() > 0) {
+                    <span class="mr-2 text-sm font-medium line-through opacity-70">{{ c.unitPrice() * c.quantity() | money }}</span>
+                  }
+                  {{ c.lineTotal() | money }}
+                </span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- reviews -->
+    <section id="reviews" class="mt-16 scroll-mt-28" aria-labelledby="reviews-h">
+      <h2 id="reviews-h" class="text-2xl font-extrabold">Reviews</h2>
+      @if ((reviews.data() ?? []).length === 0) {
+        <p class="mt-3 text-sm text-charcoal-500">No written reviews yet. Order it, love it, tell us about it.</p>
+      } @else {
+        <div class="mt-5 grid gap-4 md:grid-cols-2">
+          @for (r of reviews.data(); track r.id) {
+            <article class="card p-5">
+              <div class="flex items-center justify-between">
+                <b>{{ r.authorName }}</b>
+                <span class="text-xs text-charcoal-400">{{ r.createdAt | date: 'mediumDate' }}</span>
+              </div>
+              <app-rating-stars class="mt-1" [rating]="r.rating" [showValue]="false" />
+              @if (r.comment) { <p class="mt-2 text-sm text-charcoal-600">{{ r.comment }}</p> }
+            </article>
+          }
+        </div>
+      }
+    </section>
+  </div>
+}

@@ -1,0 +1,62 @@
+<app-modal [title]="category() ? 'Edit category' : 'New category'" size="lg" (closed)="closed.emit()">
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate class="space-y-4">
+    @if (formError()) { <div role="alert" class="rounded-xl bg-tomato-50 p-3 text-sm text-tomato-800">{{ formError() }}</div> }
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label class="label" for="cf-name">Name *</label>
+        <input id="cf-name" class="input" formControlName="name" (blur)="autoSlug()" />
+        @if (err('name', 'Name'); as e) { <p class="field-error">{{ e }}</p> }
+      </div>
+      <div>
+        <label class="label" for="cf-slug">Slug</label>
+        <input id="cf-slug" class="input" formControlName="slug" placeholder="auto from name" />
+        @if (err('slug', 'Slug'); as e) { <p class="field-error">{{ e === 'Slug has an invalid format.' ? 'Use lowercase words separated by dashes.' : e }}</p> }
+      </div>
+    </div>
+    <div>
+      <label class="label" for="cf-desc">Description</label>
+      <textarea id="cf-desc" class="input min-h-20" formControlName="description"></textarea>
+      @if (err('description', 'Description'); as e) { <p class="field-error">{{ e }}</p> }
+    </div>
+    <div class="grid gap-4 sm:grid-cols-[1fr_auto]">
+      <div>
+        <label class="label" for="cf-img">Image URL</label>
+        <input id="cf-img" class="input" formControlName="imageUrl" placeholder="https://…" />
+        @if (err('imageUrl', 'Image URL'); as e) { <p class="field-error">{{ e }}</p> }
+        <div class="mt-2"><app-image-upload-button (uploaded)="form.controls.imageUrl.setValue($event); form.markAsDirty()" /></div>
+      </div>
+      @if (form.controls.imageUrl.value) {
+        <img [src]="form.controls.imageUrl.value" alt="Preview" class="h-24 w-32 rounded-xl object-cover" />
+      }
+    </div>
+    <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <div>
+        <label class="label" for="cf-icon">Icon name</label>
+        <div class="relative">
+          <input id="cf-icon" class="input !pr-10" formControlName="icon" placeholder="pizza" list="cf-icons" />
+          @if (icons.has(form.controls.icon.value)) {
+            <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-tomato-500"><lucide-icon [name]="form.controls.icon.value" [size]="16" /></span>
+          }
+        </div>
+        <datalist id="cf-icons">
+          @for (i of iconSuggestions; track i) { <option [value]="i"></option> }
+        </datalist>
+        @if (err('icon', 'Icon'); as e) { <p class="field-error">{{ e }}</p> }
+        @else if (form.controls.icon.value && !icons.has(form.controls.icon.value)) { <p class="mt-1 text-xs text-ember-700">Not a registered icon name — it may not display on the storefront.</p> }
+      </div>
+      <div>
+        <label class="label" for="cf-sort">Sort order</label>
+        <input id="cf-sort" class="input" type="number" formControlName="sortOrder" />
+      </div>
+      <label class="flex items-center gap-2 self-end pb-2.5 text-sm font-semibold">
+        <input type="checkbox" class="h-4 w-4 accent-tomato-500" formControlName="active" /> Active (shown on menu)
+      </label>
+    </div>
+    <div class="flex justify-end gap-2 pt-2">
+      <button type="button" class="btn-outline" (click)="closed.emit()">Cancel</button>
+      <button type="submit" class="btn-primary" [disabled]="saving()">
+        @if (saving()) { <span class="inline-flex animate-spin" aria-hidden="true"><lucide-icon name="loader" [size]="16" /></span> } {{ category() ? 'Save' : 'Create' }}
+      </button>
+    </div>
+  </form>
+</app-modal>

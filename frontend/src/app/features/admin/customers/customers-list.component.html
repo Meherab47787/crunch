@@ -1,0 +1,47 @@
+<app-admin-page-header title="Customers" [subtitle]="customers.data() ? customers.data()!.totalElements + ' registered customers' : 'Registered customer accounts'" />
+
+<div class="mb-4 max-w-md" role="search">
+  <label class="sr-only" for="cu-q">Search customers</label>
+  <div class="relative">
+    <span class="inline-flex pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" aria-hidden="true"><lucide-icon name="search" [size]="16" /></span>
+    <input id="cu-q" type="search" class="input !pl-9" placeholder="Name, email or phone" [value]="search()" (input)="onSearch($any($event.target).value)" />
+  </div>
+</div>
+
+<section class="admin-card overflow-hidden" aria-label="Customers">
+  @if (customers.error()) {
+    <div class="p-4"><app-error-state [message]="customers.error()!" (retry)="customers.reload()" /></div>
+  } @else if (!customers.data()) {
+    <app-table-skeleton [rows]="8" [cols]="5" />
+  } @else if (customers.data()!.content.length === 0) {
+    <app-empty-state icon="users" [title]="q() ? 'No matching customers' : 'No customers yet'" />
+  } @else {
+    <div class="overflow-x-auto transition-opacity" [class.opacity-50]="customers.loading()">
+      <table class="table-base">
+        <thead><tr><th scope="col">Customer</th><th scope="col" class="hidden md:table-cell">Phone</th><th scope="col" class="hidden sm:table-cell">Joined</th><th scope="col" class="text-right">Orders</th><th scope="col" class="text-right">Total spent</th></tr></thead>
+        <tbody>
+          @for (c of customers.data()!.content; track c.user.id) {
+            <tr class="hover:bg-charcoal-800/[0.02]">
+              <td>
+                <div class="flex items-center gap-3">
+                  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ember-100 font-display text-sm font-bold text-ember-700">{{ c.user.fullName.charAt(0) }}</span>
+                  <div class="min-w-0">
+                    <a [routerLink]="['/admin/customers', c.user.id]" class="font-semibold text-charcoal-900 hover:text-tomato-600 hover:underline">{{ c.user.fullName }}</a>
+                    @if (!c.user.enabled) { <span class="chip ml-1 bg-tomato-100 text-tomato-700">Disabled</span> }
+                    <p class="truncate text-xs text-charcoal-500">{{ c.user.email }}</p>
+                  </div>
+                </div>
+              </td>
+              <td class="hidden whitespace-nowrap text-charcoal-600 md:table-cell">{{ c.user.phone ?? '—' }}</td>
+              <td class="hidden whitespace-nowrap text-charcoal-500 sm:table-cell">{{ c.user.createdAt | date: 'MMM d, y' }}</td>
+              <td class="text-right tabular-nums">{{ c.orderCount }}</td>
+              <td class="text-right font-semibold tabular-nums">{{ c.totalSpent | money }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination [page]="customers.data()!.page" [size]="customers.data()!.size" [total]="customers.data()!.totalElements"
+                    [totalPages]="customers.data()!.totalPages" (pageChange)="page.set($event)" />
+  }
+</section>

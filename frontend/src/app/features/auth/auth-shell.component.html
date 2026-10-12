@@ -1,0 +1,16 @@
+<div class="container-page grid min-h-[70vh] items-center gap-10 py-12 lg:grid-cols-2">
+  <div class="relative hidden overflow-hidden rounded-[2rem] lg:block">
+    <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1000&q=75&auto=format&fit=crop" alt=""
+         class="h-[34rem] w-full object-cover" />
+    <div class="absolute inset-0 bg-gradient-to-t from-charcoal-900/85 via-charcoal-900/10 to-transparent"></div>
+    <div class="absolute bottom-0 p-10 text-white">
+      <p class="font-display text-4xl font-extrabold leading-tight">Your usuals,<br />one tap away.</p>
+      <p class="mt-2 text-white/80">Save addresses, track orders live and reorder favourites.</p>
+    </div>
+  </div>
+  <div class="mx-auto w-full max-w-md">
+    <h1 class="text-4xl font-extrabold">{{ heading() }}</h1>
+    <p class="mt-2 text-charcoal-600">{{ sub() }}</p>
+    <div class="mt-8"><ng-content /></div>
+  </div>
+</div>

@@ -1,0 +1,7 @@
+<div role="alert" class="flex flex-col items-center rounded-3xl border border-tomato-200 bg-tomato-50 px-6 py-10 text-center">
+  <lucide-icon name="triangle-alert" class="mb-3 text-tomato-500" [size]="30" />
+  <p class="font-semibold text-tomato-800">{{ message() }}</p>
+  <button type="button" class="btn-outline btn-sm mt-4" (click)="retry.emit()">
+    <lucide-icon name="refresh-cw" [size]="14" /> Try again
+  </button>
+</div>

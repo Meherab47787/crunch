@@ -1,0 +1,68 @@
+@if (cart.drawerOpen()) {
+  <div class="fixed inset-0 z-[80] bg-charcoal-900/40 backdrop-blur-[2px] no-print" (click)="close()"></div>
+  <aside class="fixed inset-y-0 right-0 z-[85] flex w-full max-w-md flex-col bg-cream-50 shadow-2xl animate-fade-up no-print"
+         role="dialog" aria-modal="true" aria-label="Your bag">
+    <header class="flex items-center justify-between border-b border-charcoal-800/10 px-5 py-4">
+      <h2 class="flex items-center gap-2 text-xl font-extrabold">
+        <lucide-icon name="shopping-bag" [size]="20" class="text-tomato-500" /> Your bag
+        <span class="text-sm font-semibold text-charcoal-400">({{ cart.itemCount() }})</span>
+      </h2>
+      <button type="button" class="btn-ghost rounded-full p-2" (click)="close()" aria-label="Close bag">
+        <lucide-icon name="x" [size]="20" />
+      </button>
+    </header>
+
+    @if (cart.isEmpty()) {
+      <div class="flex flex-1 items-center justify-center">
+        <app-empty-state icon="pizza" title="Your bag is empty" text="Hungry? Our bestsellers are one tap away.">
+          <a routerLink="/menu" class="btn-primary" (click)="close()">Browse the menu</a>
+        </app-empty-state>
+      </div>
+    } @else {
+      <ul class="flex-1 space-y-3 overflow-y-auto px-5 py-4">
+        @for (line of cart.lines(); track line.key; let i = $index) {
+          @let q = quoteLine(i);
+          <li class="flex gap-3 rounded-2xl bg-white p-3 shadow-card" [class.ring-2]="q && !q.valid" [class.ring-tomato-300]="q && !q.valid">
+            <img [src]="line.imageUrl" [alt]="line.name" class="h-20 w-20 shrink-0 rounded-xl object-cover" loading="lazy" />
+            <div class="min-w-0 flex-1">
+              <div class="flex items-start justify-between gap-2">
+                <a [routerLink]="['/menu/item', line.slug]" [queryParams]="{ edit: line.key }" (click)="close()"
+                   class="font-bold leading-tight hover:text-tomato-600">{{ line.name }}</a>
+                <span class="shrink-0 text-sm font-bold tabular-nums">{{ (q?.lineTotal ?? line.displayUnitPrice * line.quantity) | money }}</span>
+              </div>
+              @if (line.summary.length) {
+                <p class="mt-0.5 line-clamp-2 text-xs text-charcoal-500">{{ line.summary.join(' · ') }}</p>
+              }
+              @if (q && !q.valid) {
+                <p class="mt-1 text-xs font-semibold text-tomato-600">{{ q.error }}</p>
+              }
+              <div class="mt-2 flex items-center justify-between">
+                <app-quantity-stepper size="sm" [value]="line.quantity" [min]="0" [allowRemove]="true" [label]="line.name"
+                                      (change)="setQty(line, $event)" />
+                <button type="button" class="text-xs font-semibold text-charcoal-400 hover:text-tomato-600" (click)="remove(line)">Remove</button>
+              </div>
+            </div>
+          </li>
+        }
+      </ul>
+      <footer class="space-y-3 border-t border-charcoal-800/10 bg-white px-5 py-4">
+        @if (freeDeliveryGap() > 0) {
+          <p class="rounded-xl bg-ember-50 px-3 py-2 text-xs font-medium text-ember-700">
+            <lucide-icon name="bike" [size]="13" class="mr-1 inline" /> Add {{ freeDeliveryGap() | money }} more for free delivery
+          </p>
+        }
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-charcoal-500">Subtotal @if (cart.quoteLoading()) { <lucide-icon name="loader" [size]="12" class="ml-1 inline animate-spin" /> }</span>
+          <span class="text-lg font-extrabold tabular-nums">{{ (cart.quote()?.subtotal ?? cart.estimatedSubtotal()) - (cart.quote()?.promotionDiscount ?? 0) | money }}</span>
+        </div>
+        <p class="text-xs text-charcoal-400">Deals applied. Taxes, delivery &amp; coupons calculated at checkout.</p>
+        <div class="grid grid-cols-2 gap-2">
+          <a routerLink="/cart" class="btn-outline" (click)="close()">View bag</a>
+          <button type="button" class="btn-primary" [disabled]="cart.quote()?.valid === false" (click)="checkout()">
+            Checkout <lucide-icon name="arrow-right" [size]="16" />
+          </button>
+        </div>
+      </footer>
+    }
+  </aside>
+}

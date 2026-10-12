@@ -1,0 +1,27 @@
+@let q = quote();
+@if (!q) {
+  <div class="space-y-2" aria-busy="true">
+    @for (i of [0, 1, 2, 3]; track i) { <div class="skeleton h-4 w-full"></div> }
+  </div>
+} @else {
+  <dl class="space-y-2 text-sm" [class.opacity-60]="loading()">
+    <div class="flex justify-between"><dt class="text-charcoal-500">Subtotal</dt><dd class="tabular-nums">{{ q.subtotal | money }}</dd></div>
+    @if (q.promotionDiscount > 0) {
+      <div class="flex justify-between text-basil-600"><dt>Deals</dt><dd class="tabular-nums">{{ -q.promotionDiscount | money }}</dd></div>
+    }
+    @if (q.couponDiscount > 0) {
+      <div class="flex justify-between text-basil-600"><dt>Coupon {{ q.couponCode }}</dt><dd class="tabular-nums">{{ -q.couponDiscount | money }}</dd></div>
+    }
+    @if (showDelivery()) {
+      <div class="flex justify-between">
+        <dt class="text-charcoal-500">Delivery</dt>
+        <dd class="tabular-nums">{{ q.deliveryFee > 0 ? (q.deliveryFee | money) : 'Free' }}</dd>
+      </div>
+    }
+    <div class="flex justify-between"><dt class="text-charcoal-500">Tax</dt><dd class="tabular-nums">{{ q.tax | money }}</dd></div>
+    <div class="flex items-baseline justify-between border-t border-charcoal-800/10 pt-3">
+      <dt class="font-display text-lg font-bold">Total</dt>
+      <dd class="font-display text-2xl font-extrabold tabular-nums">{{ q.total | money }}</dd>
+    </div>
+  </dl>
+}

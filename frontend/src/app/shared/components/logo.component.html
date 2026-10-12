@@ -1,0 +1,16 @@
+<span class="inline-flex items-center gap-2.5" [class.text-cream-100]="inverse()">
+  <svg viewBox="0 0 64 64" class="h-9 w-9 shrink-0 drop-shadow-sm" aria-hidden="true">
+    <circle cx="32" cy="32" r="30" fill="#e8442b" />
+    <path d="M32 11 51 47H13Z" fill="#ffbb4d" />
+    <path d="M13 47h38" stroke="#fff8ec" stroke-width="4" stroke-linecap="round" />
+    <circle cx="28" cy="34" r="3.4" fill="#cc2f19" />
+    <circle cx="37" cy="40" r="3.4" fill="#cc2f19" />
+    <circle cx="33.5" cy="26.5" r="2.8" fill="#cc2f19" />
+  </svg>
+  <span class="font-display leading-none">
+    <span class="block text-[1.35rem] font-extrabold tracking-tight">Crust<span class="text-tomato-500">&amp;</span>Crunch</span>
+    @if (tagline()) {
+      <span class="hidden text-[10px] font-semibold uppercase tracking-[0.2em] opacity-60 sm:block">est. 2026 · hot &amp; fast</span>
+    }
+  </span>
+</span>

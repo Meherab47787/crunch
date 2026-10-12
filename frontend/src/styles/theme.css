@@ -1,0 +1,64 @@
+/* ------------------------------------------------------------------
+   Crust & Crunch design tokens
+   tomato red · ember orange · cream · charcoal
+------------------------------------------------------------------- */
+@theme {
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --color-tomato-50: #fff3f0;
+  --color-tomato-100: #ffe2db;
+  --color-tomato-200: #ffc4b6;
+  --color-tomato-300: #ff9a83;
+  --color-tomato-400: #f86a4f;
+  --color-tomato-500: #e8442b;
+  --color-tomato-600: #cc2f19;
+  --color-tomato-700: #a82414;
+  --color-tomato-800: #8a2216;
+  --color-tomato-900: #721f17;
+
+  --color-ember-50: #fff8eb;
+  --color-ember-100: #ffebc7;
+  --color-ember-200: #ffd68a;
+  --color-ember-300: #ffbb4d;
+  --color-ember-400: #ffa024;
+  --color-ember-500: #f97d0b;
+  --color-ember-600: #dd5a06;
+  --color-ember-700: #b73c09;
+
+  --color-cream-50: #fffdf8;
+  --color-cream-100: #fff8ec;
+  --color-cream-200: #fdeed6;
+  --color-cream-300: #f8dfb8;
+
+  --color-charcoal-300: #a8a29e;
+  --color-charcoal-400: #78716c;
+  --color-charcoal-500: #57534e;
+  --color-charcoal-600: #44403c;
+  --color-charcoal-700: #2f2a27;
+  --color-charcoal-800: #221e1b;
+  --color-charcoal-900: #171412;
+
+  --color-basil-500: #2f9e44;
+  --color-basil-600: #237a34;
+
+  --shadow-card: 0 1px 2px rgb(34 30 27 / 0.06), 0 8px 24px -12px rgb(34 30 27 / 0.18);
+  --shadow-lift: 0 2px 4px rgb(34 30 27 / 0.06), 0 20px 40px -16px rgb(204 47 25 / 0.35);
+
+  --animate-fade-up: fade-up 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-shimmer: shimmer 1.4s linear infinite;
+  --animate-pop: pop 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes shimmer {
+    from { background-position: -400px 0; }
+    to   { background-position: 400px 0; }
+  }
+  @keyframes pop {
+    0% { transform: scale(0.85); }
+    100% { transform: scale(1); }
+  }
+}

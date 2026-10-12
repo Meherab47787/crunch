@@ -1,0 +1,40 @@
+<div class="container-page max-w-2xl py-12">
+  <h1 class="text-4xl font-extrabold">Track an order</h1>
+  <p class="mt-2 text-charcoal-600">Enter your order number and the tracking code from your confirmation link.</p>
+
+  @if (auth.isLoggedIn()) {
+    <a routerLink="/account/orders" class="mt-6 flex items-center justify-between rounded-2xl bg-white p-4 shadow-card hover:shadow-lift">
+      <span class="flex items-center gap-3 font-semibold"><lucide-icon name="clipboard-list" [size]="18" class="text-tomato-500" /> See all orders on your account</span>
+      <lucide-icon name="chevron-right" [size]="18" />
+    </a>
+  }
+
+  @if (recent.orders().length) {
+    <section class="mt-8">
+      <h2 class="mb-3 text-lg font-bold">Recent orders on this device</h2>
+      <ul class="space-y-2">
+        @for (r of recent.orders(); track r.orderNumber) {
+          <li>
+            <a [routerLink]="['/orders', r.orderNumber]" [queryParams]="{ token: r.token }"
+               class="flex items-center justify-between rounded-2xl bg-white p-4 shadow-card transition hover:shadow-lift">
+              <span><b>{{ r.orderNumber }}</b><span class="ml-2 text-sm text-charcoal-500">{{ r.placedAt | date: 'medium' }}</span></span>
+              <lucide-icon name="chevron-right" [size]="18" />
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="go()" class="card mt-8 grid gap-4 p-6" novalidate>
+    <div>
+      <label class="label" for="num">Order number</label>
+      <input id="num" class="input uppercase" formControlName="orderNumber" placeholder="CC261011-AB3CD" />
+    </div>
+    <div>
+      <label class="label" for="tok">Tracking code</label>
+      <input id="tok" class="input" formControlName="token" placeholder="From your confirmation link" />
+    </div>
+    <button type="submit" class="btn-primary" [disabled]="form.invalid">Track order</button>
+  </form>
+</div>

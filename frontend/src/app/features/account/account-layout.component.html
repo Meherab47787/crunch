@@ -1,0 +1,18 @@
+<div class="container-page py-10">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <p class="text-sm font-bold uppercase tracking-widest text-tomato-500">My account</p>
+      <h1 class="text-4xl font-extrabold">Hey, {{ auth.user()?.fullName?.split(' ')?.[0] }} 👋</h1>
+    </div>
+    <button type="button" class="btn-outline btn-sm" (click)="auth.logout()"><lucide-icon name="log-out" [size]="14" /> Sign out</button>
+  </div>
+  <nav class="mt-6 flex gap-2 overflow-x-auto border-b border-charcoal-800/10" aria-label="Account sections">
+    @for (t of tabs; track t.path) {
+      <a [routerLink]="t.path" routerLinkActive="!border-tomato-500 !text-charcoal-900"
+         class="-mb-px inline-flex shrink-0 items-center gap-2 border-b-2 border-transparent px-4 py-3 text-sm font-bold text-charcoal-500 hover:text-charcoal-800">
+        <lucide-icon [name]="t.icon" [size]="16" /> {{ t.label }}
+      </a>
+    }
+  </nav>
+  <div class="mt-8"><router-outlet /></div>
+</div>

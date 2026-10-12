@@ -1,0 +1,95 @@
+@let o = order();
+<article class="flex flex-col overflow-hidden rounded-2xl border-2 bg-charcoal-800 shadow-lg transition"
+         [class]="frameClass()" [attr.aria-label]="'Order ' + o.orderNumber + ', ' + elapsedLabel() + ' old'">
+  <!-- header -->
+  <header class="flex items-start justify-between gap-3 border-b border-white/10 px-4 py-3">
+    <div class="min-w-0">
+      <p class="flex items-center gap-2">
+        <span class="truncate font-display text-xl font-extrabold tracking-tight text-white">#{{ shortNumber() }}</span>
+        @if (isNew()) { <span class="chip animate-pulse bg-ember-400 text-charcoal-900">New</span> }
+      </p>
+      <p class="mt-1 flex flex-wrap items-center gap-2 text-sm">
+        <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wider"
+              [class]="o.fulfillmentType === 'DELIVERY' ? 'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wider bg-sky-300 text-sky-950' : 'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wider bg-violet-300 text-violet-950'">
+          <lucide-icon [name]="o.fulfillmentType === 'DELIVERY' ? 'bike' : 'store'" [size]="13" /> {{ o.fulfillmentType === 'DELIVERY' ? 'Delivery' : 'Pickup' }}
+        </span>
+        <span class="truncate text-cream-200/80">{{ o.contact.name }}</span>
+      </p>
+    </div>
+    <div class="shrink-0 text-right">
+      <p class="flex items-center justify-end gap-1 font-display text-2xl font-extrabold tabular-nums" [class]="timerTextClass()" role="timer" [attr.aria-label]="'Waiting ' + elapsedLabel()">
+        @if (level() !== 'ok') { <lucide-icon name="timer" [size]="18" /> }{{ elapsed() }}
+      </p>
+      <p class="text-xs text-cream-200/60">{{ o.createdAt | date: 'h:mm a' }}</p>
+    </div>
+  </header>
+
+  <!-- alerts -->
+  @if (o.allergyNotes) {
+    <div class="flex gap-2 bg-tomato-600 px-4 py-2.5 text-white" role="alert">
+      <span class="inline-flex mt-0.5 shrink-0" aria-hidden="true"><lucide-icon name="triangle-alert" [size]="20" /></span>
+      <p><span class="block text-xs font-extrabold uppercase tracking-widest">Allergy</span><span class="text-base font-bold">{{ o.allergyNotes }}</span></p>
+    </div>
+  }
+  @if (o.specialInstructions) {
+    <div class="flex gap-2 bg-ember-300 px-4 py-2.5 text-charcoal-900">
+      <span class="inline-flex mt-0.5 shrink-0" aria-hidden="true"><lucide-icon name="circle-alert" [size]="18" /></span>
+      <p><span class="block text-xs font-extrabold uppercase tracking-widest">Special instructions</span><span class="font-semibold">{{ o.specialInstructions }}</span></p>
+    </div>
+  }
+
+  <!-- items -->
+  <ul class="flex-1 divide-y divide-white/10 px-4">
+    @for (it of items(); track it.item.id) {
+      <li class="py-2.5">
+        <p class="flex gap-2 text-lg leading-tight">
+          <span class="min-w-[2.25rem] font-display font-extrabold text-ember-300">{{ it.item.quantity }}×</span>
+          <span class="font-bold text-white">{{ it.item.productName }}
+            @if (it.item.variantName) { <span class="ml-1 rounded-md bg-white/15 px-1.5 py-0.5 text-sm font-semibold text-cream-100">{{ it.item.variantName }}</span> }
+          </span>
+        </p>
+        @if (it.combo.length || it.options.length) {
+          <ul class="ml-[2.75rem] mt-1 space-y-0.5 text-[15px]">
+            @for (c of it.combo; track $index) {
+              <li class="text-cream-100"><span class="mr-1.5 text-ember-300" aria-hidden="true">▸</span><span class="mr-1 text-cream-200/60">{{ c.groupName }}:</span><b>{{ c.optionName }}</b></li>
+            }
+            @for (c of it.options; track $index) {
+              <li class="text-cream-100"><span class="mr-1.5 font-bold text-basil-500" aria-hidden="true">+</span><span class="mr-1 text-cream-200/60">{{ c.groupName }}:</span>{{ c.optionName }}</li>
+            }
+          </ul>
+        }
+        @if (it.item.notes) {
+          <p class="ml-[2.75rem] mt-1.5 rounded-lg border border-ember-300/60 bg-ember-300/10 px-2 py-1 text-[15px] font-semibold text-ember-200">
+            <span class="inline-flex mr-1 inline-block align-[-2px]" aria-hidden="true"><lucide-icon name="info" [size]="14" /></span>{{ it.item.notes }}
+          </p>
+        }
+      </li>
+    }
+  </ul>
+
+  @if (o.fulfillmentType === 'DELIVERY' && o.deliveryInstructions) {
+    <p class="border-t border-white/10 px-4 py-2 text-sm text-cream-200/70"><b class="text-cream-100">Driver:</b> {{ o.deliveryInstructions }}</p>
+  }
+
+  <!-- actions -->
+  <footer class="flex gap-2 border-t border-white/10 p-3">
+    <button type="button" class="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-white/10 text-cream-100 transition hover:bg-white/20"
+            (click)="print.emit(o)" [attr.aria-label]="'Print ticket for order ' + o.orderNumber" title="Print ticket">
+      <lucide-icon name="printer" [size]="22" />
+    </button>
+    @if (o.previousStatus; as prev) {
+      <button type="button" class="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-white/10 text-cream-100 transition hover:bg-white/20 active:scale-[0.97] disabled:cursor-wait disabled:opacity-60"
+              [disabled]="pending()" (click)="back.emit(o)"
+              [attr.aria-label]="'Move order ' + o.orderNumber + ' back to ' + backLabel(prev)" [attr.title]="'Move back to ' + backLabel(prev)">
+        <lucide-icon name="undo-2" [size]="22" />
+      </button>
+    }
+    @if (o.nextStatus) {
+      <button type="button" class="flex h-14 flex-1 items-center justify-center gap-2 rounded-xl text-lg font-extrabold transition active:scale-[0.98] disabled:cursor-wait disabled:opacity-60"
+              [class]="advanceClass()" [disabled]="pending()" (click)="advance.emit(o)">
+        @if (pending()) { <span class="inline-flex animate-spin" aria-hidden="true"><lucide-icon name="loader" [size]="22" /></span> Updating… }
+        @else { {{ advanceLabel() }} <lucide-icon name="arrow-right" [size]="22" /> }
+      </button>
+    }
+  </footer>
+</article>

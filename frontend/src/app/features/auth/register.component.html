@@ -1,0 +1,29 @@
+<app-auth-shell heading="Create your account" sub="It takes 30 seconds. Your first order gets 10% off with WELCOME10.">
+  <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4" novalidate>
+    @if (error()) { <p class="rounded-xl bg-tomato-50 px-3 py-2.5 text-sm font-semibold text-tomato-700" role="alert">{{ error() }}</p> }
+    <div>
+      <label class="label" for="fullName">Full name</label>
+      <input id="fullName" class="input" formControlName="fullName" autocomplete="name" />
+      @if (bad('fullName')) { <p class="field-error">Enter your name.</p> }
+    </div>
+    <div>
+      <label class="label" for="email">Email</label>
+      <input id="email" type="email" class="input" formControlName="email" autocomplete="email" />
+      @if (bad('email')) { <p class="field-error">Enter a valid email.</p> }
+    </div>
+    <div>
+      <label class="label" for="phone">Phone <span class="font-normal text-charcoal-400">(optional, for delivery updates)</span></label>
+      <input id="phone" type="tel" class="input" formControlName="phone" autocomplete="tel" />
+      @if (bad('phone')) { <p class="field-error">Enter a valid phone number.</p> }
+    </div>
+    <div>
+      <label class="label" for="password">Password</label>
+      <input id="password" type="password" class="input" formControlName="password" autocomplete="new-password" />
+      <p class="mt-1 text-xs" [class]="bad('password') ? 'text-tomato-600' : 'text-charcoal-400'">At least 8 characters.</p>
+    </div>
+    <button type="submit" class="btn-primary btn-lg w-full" [disabled]="busy()">
+      @if (busy()) { <lucide-icon name="loader" [size]="18" class="animate-spin" /> } Create account
+    </button>
+  </form>
+  <p class="mt-6 text-center text-sm text-charcoal-600">Already have an account? <a routerLink="/login" [queryParams]="{ returnUrl: returnUrl() }" class="font-bold text-tomato-600 hover:underline">Sign in</a></p>
+</app-auth-shell>

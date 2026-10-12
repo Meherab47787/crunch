@@ -1,0 +1,14 @@
+@if (total() > 0) {
+  <nav class="flex flex-col items-center justify-between gap-3 px-4 py-3 text-sm text-charcoal-500 sm:flex-row" aria-label="Pagination">
+    <p aria-live="polite">Showing <b class="text-charcoal-800">{{ from() }}–{{ to() }}</b> of <b class="text-charcoal-800">{{ total() }}</b></p>
+    <div class="flex items-center gap-2">
+      <button type="button" class="btn-outline btn-sm" [disabled]="page() <= 0" (click)="pageChange.emit(page() - 1)" aria-label="Previous page">
+        <lucide-icon name="chevron-left" [size]="14" /> Prev
+      </button>
+      <span class="tabular-nums">Page {{ page() + 1 }} / {{ totalPages() || 1 }}</span>
+      <button type="button" class="btn-outline btn-sm" [disabled]="page() + 1 >= totalPages()" (click)="pageChange.emit(page() + 1)" aria-label="Next page">
+        Next <lucide-icon name="chevron-right" [size]="14" />
+      </button>
+    </div>
+  </nav>
+}

@@ -1,0 +1,40 @@
+<ul class="divide-y divide-charcoal-800/5">
+  @for (it of rows(); track it.item.id) {
+    <li class="flex gap-4 py-4 first:pt-0 last:pb-0">
+      <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-charcoal-800/5 font-display text-sm font-bold">{{ it.item.quantity }}×</span>
+      <div class="min-w-0 flex-1">
+        <div class="flex flex-wrap items-baseline justify-between gap-x-4">
+          <p class="font-semibold text-charcoal-900">
+            {{ it.item.productName }}
+            @if (it.item.variantName) { <span class="font-normal text-charcoal-500">· {{ it.item.variantName }}</span> }
+          </p>
+          <p class="font-semibold tabular-nums">{{ it.item.lineTotal | money }}</p>
+        </div>
+        <p class="text-xs text-charcoal-400">
+          {{ it.item.categoryName }} · {{ it.item.unitPrice | money }} each
+          @if (it.item.variantPriceDelta) { (base {{ it.item.basePrice | money }}, size {{ it.item.variantPriceDelta | money: true }}) }
+          @if (it.item.discount > 0) { · <span class="text-basil-600">−{{ it.item.discount | money }} promo</span> }
+        </p>
+        @if (it.groups.length) {
+          <dl class="mt-2 space-y-1 text-sm">
+            @for (g of it.groups; track g.name) {
+              <div class="flex flex-wrap gap-x-2">
+                <dt class="text-charcoal-500">
+                  @if (g.combo) { <span class="chip mr-1 bg-ember-100 text-ember-700">Combo</span> }{{ g.name }}:
+                </dt>
+                <dd class="text-charcoal-800">
+                  @for (c of g.choices; track $index; let last = $last) {
+                    {{ c.optionName }}@if (c.priceDelta) { <span class="text-xs text-charcoal-400"> ({{ c.priceDelta | money: true }})</span> }@if (!last) {, }
+                  }
+                </dd>
+              </div>
+            }
+          </dl>
+        }
+        @if (it.item.notes) {
+          <p class="mt-2 rounded-lg bg-ember-50 px-3 py-1.5 text-sm text-ember-700"><b>Note:</b> {{ it.item.notes }}</p>
+        }
+      </div>
+    </li>
+  }
+</ul>
