@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npx ng build --configuration production",
+  "outputDirectory": "dist/frontend/browser",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://crunch-0gua.onrender.com/api/:path*" },
+    { "source": "/uploads/:path*", "destination": "https://crunch-0gua.onrender.com/uploads/:path*" },
+    { "source": "/((?!.*\\.).*)", "destination": "/index.html" }
+  ]
+}
