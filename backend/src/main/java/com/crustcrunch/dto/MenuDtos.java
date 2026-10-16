@@ -75,7 +75,7 @@ public final class MenuDtos {
 
     public record PublicSettings(String restaurantName, String tagline, String phone, String email, String address,
                                  String currency, List<HoursEntry> hours, BigDecimal taxRate, BigDecimal deliveryFee,
-                                 BigDecimal freeDeliveryThreshold, BigDecimal minDeliveryOrder,
+                                 BigDecimal freeDeliveryThreshold,
                                  int deliveryMinutes, int pickupMinutes) {
     }
 }

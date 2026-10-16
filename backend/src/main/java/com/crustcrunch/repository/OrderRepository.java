@@ -21,6 +21,8 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
 
     Optional<Order> findByOrderNumber(String orderNumber);
 
+    boolean existsByOrderNumberStartingWith(String prefix);
+
     Page<Order> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
     List<Order> findByStatusInOrderByCreatedAtAsc(Collection<OrderStatus> statuses);

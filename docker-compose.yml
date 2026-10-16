@@ -1,13 +1,16 @@
 name: crustcrunch
 
 services:
+  # Local database, only started with `docker compose --profile local-db up`.
+  # By default the backend connects to the hosted database in DB_URL.
   postgres:
     image: postgres:17-alpine
+    profiles: ["local-db"]
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-crustcrunch}
       POSTGRES_USER: ${POSTGRES_USER:-crustcrunch}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crustcrunch}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -22,10 +25,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+        required: false
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-crustcrunch}
-      DB_USERNAME: ${POSTGRES_USER:-crustcrunch}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_URL: ${DB_URL:-jdbc:postgresql://postgres:5432/crustcrunch}
+      DB_USERNAME: ${DB_USERNAME:-crustcrunch}
+      DB_PASSWORD: ${DB_PASSWORD:-crustcrunch}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
       JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-1440}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8081}
@@ -34,11 +38,10 @@ services:
       KITCHEN_EMAIL: ${KITCHEN_EMAIL:-}
       KITCHEN_PASSWORD: ${KITCHEN_PASSWORD:-}
       DEMO_DATA: ${DEMO_DATA:-false}
-      TAX_RATE: ${TAX_RATE:-0.08}
-      DELIVERY_FEE: ${DELIVERY_FEE:-2.99}
-      FREE_DELIVERY_THRESHOLD: ${FREE_DELIVERY_THRESHOLD:-35.00}
-      MIN_DELIVERY_ORDER: ${MIN_DELIVERY_ORDER:-10.00}
-      CURRENCY: ${CURRENCY:-USD}
+      TAX_RATE: ${TAX_RATE:-0.05}
+      DELIVERY_FEE: ${DELIVERY_FEE:-60.00}
+      FREE_DELIVERY_THRESHOLD: ${FREE_DELIVERY_THRESHOLD:-1500.00}
+      CURRENCY: ${CURRENCY:-BDT}
       PAYMENTS_SIMULATED: ${PAYMENTS_SIMULATED:-true}
       RESTAURANT_TIMEZONE: ${RESTAURANT_TIMEZONE:-UTC}
       RESTAURANT_PHONE: ${RESTAURANT_PHONE:-}

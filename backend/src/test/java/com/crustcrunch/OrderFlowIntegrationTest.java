@@ -147,17 +147,17 @@ class OrderFlowIntegrationTest {
 
             JsonNode q = postJson("/api/cart/quote", body, null, 200);
 
-            // Pepperoni 11.49 + Medium 3.00 = 14.49; Pizza Week 20% -> 2.898 -> 2.90
+            // Pepperoni 1150 + Medium 300 = 1450; Pizza Week 20% -> 290
             assertThat(q.get("valid").asBoolean()).isTrue();
-            assertMoney(q.at("/lines/0/unitPrice"), "14.49");
-            assertMoney(q.at("/lines/0/promotionDiscount"), "2.90");
-            assertMoney(q.at("/lines/0/lineTotal"), "11.59");
+            assertMoney(q.at("/lines/0/unitPrice"), "1450.00");
+            assertMoney(q.at("/lines/0/promotionDiscount"), "290.00");
+            assertMoney(q.at("/lines/0/lineTotal"), "1160.00");
             assertThat(q.at("/lines/0/promotionName").asText()).isEqualTo("Pizza Week: 20% Off");
-            assertMoney(q.get("subtotal"), "14.49");
+            assertMoney(q.get("subtotal"), "1450.00");
             assertMoney(q.get("deliveryFee"), "0.00");
-            // tax 11.59 * 0.08 = 0.9272 -> 0.93
-            assertMoney(q.get("tax"), "0.93");
-            assertMoney(q.get("total"), "12.52");
+            // VAT 1160 * 0.05 = 58
+            assertMoney(q.get("tax"), "58.00");
+            assertMoney(q.get("total"), "1218.00");
         }
 
         @Test
@@ -190,9 +190,9 @@ class OrderFlowIntegrationTest {
 
             JsonNode q = postJson("/api/cart/quote", Map.of("items", List.of(line)), null, 200);
 
-            // 12.99 + rings 1.00 + milkshake 2.50
+            // 1300 + rings 100 + milkshake 250
             assertThat(q.get("valid").asBoolean()).isTrue();
-            assertMoney(q.at("/lines/0/unitPrice"), "16.49");
+            assertMoney(q.at("/lines/0/unitPrice"), "1650.00");
         }
     }
 
@@ -214,7 +214,7 @@ class OrderFlowIntegrationTest {
             String token = order.get("trackingToken").asText();
             assertThat(token).isNotBlank();
             assertThat(order.get("status").asText()).isEqualTo("PENDING");
-            assertMoney(order.get("total"), "12.52");
+            assertMoney(order.get("total"), "1218.00");
 
             // replay with the same key and body: same order, no new row
             long before = orderRepository.count();
@@ -261,15 +261,15 @@ class OrderFlowIntegrationTest {
 
         @Test
         void deliveryWithAddressSucceeds() throws Exception {
-            Map<String, Object> body = pickupCheckout(uniqueEmail("deliver"), List.of(pepperoniLine(2)), null);
+            Map<String, Object> body = pickupCheckout(uniqueEmail("deliver"), List.of(pepperoniLine(1)), null);
             body.put("fulfillmentType", "DELIVERY");
-            body.put("address", Map.of("line1", "1 Test Street", "city", "Springfield"));
+            body.put("address", Map.of("line1", "House 12, Road 5, Banani", "city", "Dhaka"));
 
             JsonNode order = checkout(body, uniqueKey(), null, 201);
 
             assertThat(order.get("fulfillmentType").asText()).isEqualTo("DELIVERY");
-            // 2 x 11.59 = 23.18 < 35 -> delivery fee applies
-            assertMoney(order.get("deliveryFee"), "2.99");
+            // 1160 < 1500 -> delivery fee applies; there is no minimum order for delivery
+            assertMoney(order.get("deliveryFee"), "60.00");
         }
 
         @Test
@@ -392,9 +392,9 @@ class OrderFlowIntegrationTest {
             long id = order.get("id").asLong();
             assertThat(order.get("couponCode").asText()).isEqualTo("WELCOME10");
             assertThat(order.get("customerId").isNull()).isFalse();
-            // 2 x 14.49 = 28.98; promo 2 x 2.90 = 5.80; after promo 23.18; WELCOME10 = 2.318 -> 2.32
-            assertMoney(order.get("subtotal"), "28.98");
-            assertMoney(order.get("discountTotal"), "8.12");
+            // 2 x 1450 = 2900; promo 2 x 290 = 580; after promo 2320; WELCOME10 = 232
+            assertMoney(order.get("subtotal"), "2900.00");
+            assertMoney(order.get("discountTotal"), "812.00");
 
             // the order shows up in "my orders"
             JsonNode mine = getJson(authed(get("/api/orders/my"), token), 200);
@@ -422,7 +422,7 @@ class OrderFlowIntegrationTest {
             // coupon is usable again
             JsonNode again = quote(List.of(pepperoniLine(2)), "WELCOME10", token);
             assertThat(again.get("couponApplied").asBoolean()).isTrue();
-            assertMoney(again.get("couponDiscount"), "2.32");
+            assertMoney(again.get("couponDiscount"), "232.00");
 
             // can't cancel twice
             postJson("/api/orders/" + id + "/cancel", Map.of(), token, 422);

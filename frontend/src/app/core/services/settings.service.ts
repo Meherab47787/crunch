@@ -6,7 +6,7 @@ import { PublicSettings } from '../models/api.models';
 export class SettingsService {
   private readonly http = inject(HttpClient);
   readonly settings = signal<PublicSettings | null>(null);
-  readonly currency = computed(() => this.settings()?.currency ?? 'USD');
+  readonly currency = computed(() => this.settings()?.currency ?? 'BDT');
 
   load(): void {
     if (this.settings()) return;

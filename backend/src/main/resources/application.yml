@@ -64,11 +64,10 @@ app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
   pricing:
-    tax-rate: ${TAX_RATE:0.08}
-    delivery-fee: ${DELIVERY_FEE:2.99}
-    free-delivery-threshold: ${FREE_DELIVERY_THRESHOLD:35.00}
-    min-delivery-order: ${MIN_DELIVERY_ORDER:10.00}
-    currency: ${CURRENCY:USD}
+    tax-rate: ${TAX_RATE:0.05}
+    delivery-fee: ${DELIVERY_FEE:60.00}
+    free-delivery-threshold: ${FREE_DELIVERY_THRESHOLD:1500.00}
+    currency: ${CURRENCY:BDT}
   payments:
     simulated: ${PAYMENTS_SIMULATED:true}
   restaurant:

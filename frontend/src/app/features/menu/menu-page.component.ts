@@ -6,6 +6,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import { ProductQuery, ProductSummary } from '../../core/models/api.models';
 import { MenuService } from '../../core/services/menu.service';
 import { errorMessage } from '../../core/utils/errors';
+import { MoneyPipe } from '../../core/utils/money.pipe';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ErrorStateComponent } from '../../shared/components/error-state.component';
 import { ProductCardSkeletonComponent } from '../../shared/components/product-card-skeleton.component';
@@ -34,7 +35,7 @@ interface Filters {
 
 @Component({
   selector: 'app-menu-page',
-  imports: [FormsModule, RouterLink, LucideAngularModule, ProductCardComponent, ProductCardSkeletonComponent,
+  imports: [FormsModule, RouterLink, LucideAngularModule, MoneyPipe, ProductCardComponent, ProductCardSkeletonComponent,
     EmptyStateComponent, ErrorStateComponent],
   templateUrl: './menu-page.component.html',
 })

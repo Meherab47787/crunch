@@ -220,7 +220,6 @@ export interface PublicSettings {
   taxRate: number;
   deliveryFee: number;
   freeDeliveryThreshold: number;
-  minDeliveryOrder: number;
   deliveryMinutes: number;
   pickupMinutes: number;
 }

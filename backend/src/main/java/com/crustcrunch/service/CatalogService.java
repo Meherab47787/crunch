@@ -101,7 +101,7 @@ public class CatalogService {
         var p = props.pricing();
         return new PublicSettings(r.name(), r.tagline(), r.phone(), r.email(), r.address(), p.currency(),
                 r.hours() == null ? List.of() : r.hours(), p.taxRate(), p.deliveryFee(), p.freeDeliveryThreshold(),
-                p.minDeliveryOrder(), r.deliveryMinutes(), r.pickupMinutes());
+                r.deliveryMinutes(), r.pickupMinutes());
     }
 
     static Sort sortFor(String sort) {

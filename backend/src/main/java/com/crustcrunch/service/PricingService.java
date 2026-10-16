@@ -134,9 +134,6 @@ public class PricingService {
         BigDecimal net = afterPromos.subtract(couponDiscount).max(BigDecimal.ZERO);
         BigDecimal deliveryFee = BigDecimal.ZERO.setScale(2);
         if (fulfillment == FulfillmentType.DELIVERY && !validLines.isEmpty()) {
-            if (net.compareTo(config.minDeliveryOrder()) < 0) {
-                issues.add("Delivery orders need a minimum of " + format(config.minDeliveryOrder()) + " after discounts — add a little more or choose pickup");
-            }
             if (net.compareTo(config.freeDeliveryThreshold()) < 0) {
                 deliveryFee = money(config.deliveryFee());
             }
@@ -177,8 +174,16 @@ public class PricingService {
     }
 
     private String format(BigDecimal amount) {
-        java.text.NumberFormat f = java.text.NumberFormat.getCurrencyInstance(java.util.Locale.US);
-        f.setCurrency(java.util.Currency.getInstance(config.currency()));
+        java.util.Currency currency = java.util.Currency.getInstance(config.currency());
+        java.text.DecimalFormat f = (java.text.DecimalFormat) java.text.NumberFormat.getCurrencyInstance(java.util.Locale.US);
+        f.setCurrency(currency);
+        // Locale.US renders taka as "BDT"; use the local sign
+        if ("BDT".equals(currency.getCurrencyCode())) {
+            java.text.DecimalFormatSymbols symbols = f.getDecimalFormatSymbols();
+            symbols.setCurrencySymbol("৳");
+            f.setDecimalFormatSymbols(symbols);
+        }
+        f.setMinimumFractionDigits(amount.stripTrailingZeros().scale() > 0 ? 2 : 0);
         return f.format(amount);
     }
 

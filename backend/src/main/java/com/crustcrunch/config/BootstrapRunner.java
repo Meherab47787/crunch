@@ -35,7 +35,8 @@ public class BootstrapRunner implements ApplicationRunner {
 
     /**
      * Deliberately not one transaction: each account commits on its own (UserRepository.save),
-     * so staff can sign in even while demo data — which runs in its own transaction — is generating.
+     * so staff can sign in even while demo data is generating. Demo data runs on a background
+     * thread so a slow or flaky database delays neither readiness nor startup, and can't crash it.
      */
     @Override
     public void run(ApplicationArguments args) {
@@ -46,7 +47,17 @@ public class BootstrapRunner implements ApplicationRunner {
         ensureUser(b.adminEmail(), b.adminPassword(), b.adminName(), Role.ADMIN);
         ensureUser(b.kitchenEmail(), b.kitchenPassword(), "Kitchen Display", Role.KITCHEN_STAFF);
         if (b.demoData()) {
+            Thread t = new Thread(this::generateDemoData, "demo-data");
+            t.setDaemon(true);
+            t.start();
+        }
+    }
+
+    private void generateDemoData() {
+        try {
             demoData.generateIfEmpty();
+        } catch (RuntimeException e) {
+            log.error("Demo data generation failed; continuing without it", e);
         }
     }
 

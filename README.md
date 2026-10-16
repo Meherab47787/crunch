@@ -167,7 +167,7 @@ Every setting is an environment variable (see `.env.example`). The main ones:
 | `CORS_ALLOWED_ORIGINS` | Comma-separated browser origins |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `KITCHEN_EMAIL`, `KITCHEN_PASSWORD` | Bootstrap accounts (created once) |
 | `DEMO_DATA` | Generate sample order history on an empty DB |
-| `TAX_RATE`, `DELIVERY_FEE`, `FREE_DELIVERY_THRESHOLD`, `MIN_DELIVERY_ORDER`, `CURRENCY` | Pricing rules |
+| `TAX_RATE`, `DELIVERY_FEE`, `FREE_DELIVERY_THRESHOLD`, `CURRENCY` | Pricing rules (amounts in `CURRENCY`; default BDT) |
 | `PAYMENTS_SIMULATED` | Enable the demo online gateway |
 | `RESTAURANT_TIMEZONE`, `RESTAURANT_PHONE`, `RESTAURANT_EMAIL`, `RESTAURANT_ADDRESS` | Storefront info and dashboard day boundaries |
 
@@ -190,7 +190,7 @@ npx playwright test
 | Suite | Covers |
 |---|---|
 | `OrderStatusTest` | Every allowed and forbidden transition for delivery and pickup |
-| `PricingServiceTest` | Variant, option and combo pricing; min/max rules; sold-out handling; promotions (rounding, caps); coupons (expiry, minimums, category scope, caps, limits); delivery fee; tax |
+| `PricingServiceTest` | Variant, option and combo pricing; min/max selection rules; sold-out handling; promotions (rounding, caps); coupons (expiry, minimums, category scope, caps, limits); delivery fee; tax |
 | `StorageServiceTest` | Upload magic-number checks |
 | `OrderFlowIntegrationTest` | Public menu, server-side quotes, guest checkout + idempotency, tracking, kitchen/admin authorization, coupon limits and release on cancel, reviews, admin menu CRUD and sold-out toggles |
 | Frontend specs | Cart merging, editing, undo, persistence, quote requests that never send prices; customizer pricing and rules; error messages |

@@ -4,7 +4,7 @@
 <div class="bg-charcoal-800 text-cream-100 no-print">
   <div class="container-page flex items-center justify-center gap-2 py-2 text-xs font-medium sm:text-sm">
     <lucide-icon name="bike" [size]="15" class="text-ember-300" />
-    <span>Free delivery over {{ settings.settings()?.freeDeliveryThreshold ?? 35 | money }} · Use code <b class="text-ember-300">WELCOME10</b> for 10% off your first order</span>
+    <span>Free delivery over {{ settings.settings()?.freeDeliveryThreshold ?? 1500 | money }} · Use code <b class="text-ember-300">WELCOME10</b> for 10% off your first order</span>
   </div>
 </div>
 
@@ -79,6 +79,8 @@
     </nav>
   }
 </header>
+
+<app-active-order-banner />
 
 <main id="main" class="min-h-[60vh]">
   <router-outlet />

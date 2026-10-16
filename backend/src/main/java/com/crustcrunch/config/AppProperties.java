@@ -18,11 +18,10 @@ public record AppProperties(Jwt jwt, Cors cors, Pricing pricing, Restaurant rest
     public record Cors(List<String> allowedOrigins) {
     }
 
-    public record Pricing(@DefaultValue("0.08") BigDecimal taxRate,
-                          @DefaultValue("2.99") BigDecimal deliveryFee,
-                          @DefaultValue("35.00") BigDecimal freeDeliveryThreshold,
-                          @DefaultValue("10.00") BigDecimal minDeliveryOrder,
-                          @DefaultValue("USD") String currency) {
+    public record Pricing(@DefaultValue("0.05") BigDecimal taxRate,
+                          @DefaultValue("60.00") BigDecimal deliveryFee,
+                          @DefaultValue("1500.00") BigDecimal freeDeliveryThreshold,
+                          @DefaultValue("BDT") String currency) {
     }
 
     public record Restaurant(String name, String tagline, String phone, String email, String address,

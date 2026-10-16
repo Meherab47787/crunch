@@ -81,9 +81,9 @@
       <fieldset>
         <legend class="label">Max price</legend>
         <div class="flex items-center gap-3">
-          <input type="range" min="2" max="35" step="1" class="w-full accent-tomato-500" [ngModel]="filters().maxPrice ?? 35"
-                 (ngModelChange)="patch({ maxPrice: +$event >= 35 ? null : +$event })" aria-label="Maximum price" />
-          <span class="w-12 text-right text-sm font-bold tabular-nums">{{ filters().maxPrice ? '$' + filters().maxPrice : 'Any' }}</span>
+          <input type="range" min="200" max="3500" step="50" class="w-full accent-tomato-500" [ngModel]="filters().maxPrice ?? 3500"
+                 (ngModelChange)="patch({ maxPrice: +$event >= 3500 ? null : +$event })" aria-label="Maximum price" />
+          <span class="w-16 text-right text-sm font-bold tabular-nums">{{ filters().maxPrice ? (filters().maxPrice | money) : 'Any' }}</span>
         </div>
       </fieldset>
       <label class="flex cursor-pointer items-center justify-between gap-2 text-sm font-semibold">

@@ -5,7 +5,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import { OrderStatus, SalesPoint } from '../../../core/models/api.models';
 import { AdminService } from '../../../core/services/admin.service';
 import { SettingsService } from '../../../core/services/settings.service';
-import { MoneyPipe } from '../../../core/utils/money.pipe';
+import { MoneyPipe, formatMoney } from '../../../core/utils/money.pipe';
 import { ALL_STATUSES, STATUS_SHORT } from '../../../core/utils/order-status';
 import { remote } from '../../../core/utils/remote';
 import { EmptyStateComponent } from '../../../shared/components/empty-state.component';
@@ -37,10 +37,9 @@ export class DashboardComponent {
     { key: 'monthly', label: 'Monthly' },
   ];
 
-  readonly fmt = (v: number) =>
-    new Intl.NumberFormat(undefined, { style: 'currency', currency: this.settings.currency() }).format(v);
+  readonly fmt = (v: number) => formatMoney(v, this.settings.currency());
   readonly fmtCompact = (v: number) =>
-    new Intl.NumberFormat(undefined, { style: 'currency', currency: this.settings.currency(), notation: 'compact', maximumFractionDigits: v >= 1000 ? 1 : 0 }).format(v);
+    formatMoney(v, this.settings.currency(), { notation: 'compact', minimumFractionDigits: 0, maximumFractionDigits: v >= 1000 ? 1 : 0 });
 
   readonly granularityText = computed(() => {
     const s = this.stats.data();

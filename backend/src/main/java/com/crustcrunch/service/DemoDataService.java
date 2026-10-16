@@ -12,16 +12,19 @@ import com.crustcrunch.service.PricingService.Buyer;
 import com.crustcrunch.service.PricingService.PricedCart;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Supplier;
 
 /**
  * Generates realistic order history (opt-in via BOOTSTRAP_DEMO_DATA=true) so the dashboard,
@@ -33,6 +36,9 @@ public class DemoDataService {
 
     private static final Logger log = LoggerFactory.getLogger(DemoDataService.class);
 
+    private static final String DEMO_PREFIX = "CC-DEMO-";
+    private static final String[] AREAS = {"Gulshan 2", "Banani", "Dhanmondi", "Uttara Sector 7", "Mohammadpur", "Bashundhara R/A"};
+    private static final String[] POSTCODES = {"1212", "1213", "1209", "1230", "1207", "1229"};
     private static final String[][] CUSTOMERS = {
             {"Maya Thompson", "maya.t@example.com"}, {"Daniel Okafor", "daniel.o@example.com"},
             {"Sofia Martinez", "sofia.m@example.com"}, {"Liam Chen", "liam.c@example.com"},
@@ -58,11 +64,12 @@ public class DemoDataService {
     private final PasswordEncoder encoder;
     private final JdbcTemplate jdbc;
     private final Clock clock;
+    private final TransactionTemplate tx;
     private final Random rnd = new Random(42);
 
     public DemoDataService(UserRepository users, ProductRepository products, OrderRepository orders,
                            ReviewRepository reviews, PricingService pricing, PasswordEncoder encoder,
-                           JdbcTemplate jdbc, Clock clock) {
+                           JdbcTemplate jdbc, Clock clock, PlatformTransactionManager txManager) {
         this.users = users;
         this.products = products;
         this.orders = orders;
@@ -71,71 +78,107 @@ public class DemoDataService {
         this.encoder = encoder;
         this.jdbc = jdbc;
         this.clock = clock;
+        this.tx = new TransactionTemplate(txManager);
     }
 
-    @Transactional
+    /**
+     * Commits one day of history at a time rather than everything in one transaction: hosted Postgres
+     * proxies drop connections mid-way, and a dropped connection should only cost one retried chunk.
+     */
     public void generateIfEmpty() {
-        if (orders.count() > 0) {
+        // keyed on demo orders, not all orders, so real orders placed in the meantime don't block regeneration
+        if (orders.existsByOrderNumberStartingWith(DEMO_PREFIX)) {
             return;
         }
-        List<User> customers = new ArrayList<>();
-        for (String[] c : CUSTOMERS) {
-            User u = users.findByEmailIgnoreCase(c[1]).orElseGet(() -> {
-                User nu = new User();
-                nu.setEmail(c[1]);
-                nu.setFullName(c[0]);
-                nu.setRole(Role.CUSTOMER);
-                // random password nobody knows; demo customers can't sign in
-                nu.setPasswordHash(encoder.encode(UUID.randomUUID().toString()));
-                return users.save(nu);
-            });
-            customers.add(u);
-        }
-        List<Product> menu = products.findAll().stream().filter(Product::isOrderable).toList();
+        List<User> customers = inChunk("customers", () -> {
+            List<User> out = new ArrayList<>();
+            for (String[] c : CUSTOMERS) {
+                out.add(users.findByEmailIgnoreCase(c[1]).orElseGet(() -> {
+                    User nu = new User();
+                    nu.setEmail(c[1]);
+                    nu.setFullName(c[0]);
+                    nu.setRole(Role.CUSTOMER);
+                    // random password nobody knows; demo customers can't sign in
+                    nu.setPasswordHash(encoder.encode(UUID.randomUUID().toString()));
+                    return users.save(nu);
+                }));
+            }
+            return out;
+        });
         Instant now = clock.instant();
         int created = 0;
         List<Order> delivered = new ArrayList<>();
         for (int day = 59; day >= 0; day--) {
-            int perDay = 2 + rnd.nextInt(day < 14 ? 6 : 4);
-            for (int k = 0; k < perDay; k++) {
-                Instant at = now.minus(Duration.ofDays(day)).minus(Duration.ofMinutes(30 + rnd.nextInt(600)));
-                if (day == 0 && at.isAfter(now.minus(Duration.ofMinutes(90)))) {
-                    continue;
-                }
-                Order o = buildOrder(customers.get(rnd.nextInt(customers.size())), menu, at, finalStatus(day));
-                if (o != null) {
-                    created++;
-                    if (o.getStatus() == OrderStatus.DELIVERED) {
-                        delivered.add(o);
+            int d = day;
+            List<Order> made = inChunk("day -" + day, () -> {
+                List<Product> menu = orderableMenu();
+                List<Order> out = new ArrayList<>();
+                int perDay = 2 + rnd.nextInt(d < 14 ? 6 : 4);
+                for (int k = 0; k < perDay; k++) {
+                    Instant at = now.minus(Duration.ofDays(d)).minus(Duration.ofMinutes(30 + rnd.nextInt(600)));
+                    if (d == 0 && at.isAfter(now.minus(Duration.ofMinutes(90)))) {
+                        continue;
+                    }
+                    Order o = buildOrder(customers.get(rnd.nextInt(customers.size())), menu, at, finalStatus(d));
+                    if (o != null) {
+                        out.add(o);
                     }
                 }
-            }
+                return out;
+            });
+            created += made.size();
+            made.stream().filter(o -> o.getStatus() == OrderStatus.DELIVERED).forEach(delivered::add);
         }
         // a few live orders for the kitchen display
-        OrderStatus[] live = {OrderStatus.PENDING, OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.PREPARING,
-                OrderStatus.PREPARING, OrderStatus.READY_FOR_PICKUP};
-        for (int i = 0; i < live.length; i++) {
-            if (buildOrder(customers.get(i % customers.size()), menu, now.minus(Duration.ofMinutes(4 + i * 6L)), live[i]) != null) {
-                created++;
+        created += inChunk("live orders", () -> {
+            List<Product> menu = orderableMenu();
+            OrderStatus[] live = {OrderStatus.PENDING, OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.PREPARING,
+                    OrderStatus.PREPARING, OrderStatus.READY_FOR_PICKUP};
+            int n = 0;
+            for (int i = 0; i < live.length; i++) {
+                if (buildOrder(customers.get(i % customers.size()), menu, now.minus(Duration.ofMinutes(4 + i * 6L)), live[i]) != null) {
+                    n++;
+                }
             }
-        }
-        int reviewCount = 0;
+            return n;
+        });
         Collections.shuffle(delivered, rnd);
-        for (Order o : delivered.subList(0, Math.min(14, delivered.size()))) {
-            OrderItem item = o.getItems().getFirst();
-            if (item.getProductId() == null) {
-                continue;
+        int reviewCount = inChunk("reviews", () -> {
+            int n = 0;
+            for (Order o : delivered.subList(0, Math.min(14, delivered.size()))) {
+                OrderItem item = o.getItems().getFirst();
+                if (item.getProductId() == null) {
+                    continue;
+                }
+                Review r = new Review();
+                r.setUser(o.getUser());
+                r.setOrder(o);
+                r.setProduct(products.getReferenceById(item.getProductId()));
+                r.setRating(rnd.nextInt(10) < 8 ? 5 : 4);
+                r.setComment(COMMENTS[n % COMMENTS.length]);
+                reviews.save(r);
+                n++;
             }
-            Review r = new Review();
-            r.setUser(o.getUser());
-            r.setOrder(o);
-            r.setProduct(products.getReferenceById(item.getProductId()));
-            r.setRating(rnd.nextInt(10) < 8 ? 5 : 4);
-            r.setComment(COMMENTS[reviewCount % COMMENTS.length]);
-            reviews.save(r);
-            reviewCount++;
-        }
+            return n;
+        });
         log.info("Demo data: created {} orders and {} reviews", created, reviewCount);
+    }
+
+    private List<Product> orderableMenu() {
+        return products.findAll().stream().filter(Product::isOrderable).toList();
+    }
+
+    private <T> T inChunk(String what, Supplier<T> work) {
+        for (int attempt = 1; ; attempt++) {
+            try {
+                return tx.execute(status -> work.get());
+            } catch (DataAccessException e) {
+                if (attempt >= 3) {
+                    throw e;
+                }
+                log.warn("Demo data: {} failed (attempt {}), retrying: {}", what, attempt, e.getMessage());
+            }
+        }
     }
 
     private OrderStatus finalStatus(int daysAgo) {
@@ -164,18 +207,19 @@ public class DemoDataService {
             ft = FulfillmentType.DELIVERY;
         }
         Order o = new Order();
-        o.setOrderNumber("CC-DEMO-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        o.setOrderNumber(DEMO_PREFIX + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         o.setTrackingToken(UUID.randomUUID().toString().replace("-", ""));
         o.setIdempotencyKey("demo-" + UUID.randomUUID());
         o.setUser(customer);
         o.setContactName(customer.getFullName());
         o.setContactEmail(customer.getEmail());
-        o.setContactPhone("+1 555 01" + (10 + rnd.nextInt(89)));
+        o.setContactPhone("+880 17" + (10_000_000 + rnd.nextInt(90_000_000)));
         o.setFulfillmentType(ft);
         if (ft == FulfillmentType.DELIVERY) {
-            o.setAddressLine1((10 + rnd.nextInt(890)) + " Maple Avenue");
-            o.setAddressCity("Springfield");
-            o.setAddressPostalCode("62704");
+            int area = rnd.nextInt(AREAS.length);
+            o.setAddressLine1("House " + (1 + rnd.nextInt(120)) + ", Road " + (1 + rnd.nextInt(40)) + ", " + AREAS[area]);
+            o.setAddressCity("Dhaka");
+            o.setAddressPostalCode(POSTCODES[area]);
         }
         if (rnd.nextInt(6) == 0) {
             o.setAllergyNotes("Nut allergy — please keep separate");

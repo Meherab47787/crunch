@@ -79,7 +79,7 @@ class PricingServiceTest {
     @BeforeEach
     void setUp() {
         var pricingConfig = new AppProperties.Pricing(new BigDecimal("0.08"), new BigDecimal("2.99"),
-                new BigDecimal("35.00"), new BigDecimal("10.00"), "USD");
+                new BigDecimal("35.00"), "USD");
         var props = new AppProperties(null, null, pricingConfig, null, null, null);
         pricing = new PricingService(productRepo, promotionRepo, couponRepo, redemptionRepo, props,
                 Clock.fixed(NOW, ZoneOffset.UTC));
@@ -284,7 +284,7 @@ class PricingServiceTest {
 
             assertThat(cart.coupon()).isNull();
             assertThat(cart.couponDiscount()).isEqualByComparingTo("0.00");
-            assertThat(cart.couponMessage()).isEqualTo("Spend at least $50.00 to use this coupon");
+            assertThat(cart.couponMessage()).isEqualTo("Spend at least $50 to use this coupon");
             // a rejected coupon is reported but doesn't make the cart itself invalid
             assertThat(cart.valid()).isTrue();
         }
@@ -439,12 +439,12 @@ class PricingServiceTest {
     }
 
     @Test
-    void deliveryBelowMinimumOrderIsAnIssue() {
+    void smallDeliveryOrderIsAllowedAndPaysDeliveryFee() {
         PricedCart cart = pricing.priceCart(List.of(line(fries, null, List.of(), 1)), null,
                 FulfillmentType.DELIVERY, Buyer.ANONYMOUS);
 
-        assertThat(cart.valid()).isFalse();
-        assertThat(cart.issues()).singleElement().asString().contains("minimum of $10.00");
+        assertThat(cart.valid()).isTrue();
+        assertThat(cart.deliveryFee()).isEqualByComparingTo("2.99");
     }
 
     @Test

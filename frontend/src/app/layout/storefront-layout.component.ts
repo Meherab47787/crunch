@@ -7,13 +7,14 @@ import { CartService } from '../core/services/cart.service';
 import { MenuService } from '../core/services/menu.service';
 import { SettingsService } from '../core/services/settings.service';
 import { LogoComponent } from '../shared/components/logo.component';
+import { ActiveOrderBannerComponent } from './active-order-banner.component';
 import { CartDrawerComponent } from './cart-drawer.component';
 import { MoneyPipe } from '../core/utils/money.pipe';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-storefront-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule, LogoComponent, CartDrawerComponent, MoneyPipe],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule, LogoComponent, CartDrawerComponent, ActiveOrderBannerComponent, MoneyPipe],
   templateUrl: './storefront-layout.component.html',
 })
 export class StorefrontLayoutComponent {
